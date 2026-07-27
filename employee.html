@@ -1,42 +1,131 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>員工管理</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="stylesheet" href="css/style.css">
+    <title>員工管理｜濬宏企業</title>
+
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
-<div class="header">
-    <h1>👥 員工管理</h1>
-    <p>濬宏企業有限公司</p>
-</div>
+<header class="page-header">
+    <a href="index.html" class="back-button">‹</a>
 
-<div class="menu">
+    <div>
+        <h1>員工管理</h1>
+        <p>新增、修改及管理員工資料</p>
+    </div>
+</header>
 
-<div class="card">
-<h2>目前員工</h2>
+<main class="employee-page">
 
-<p>目前尚未新增任何員工</p>
+    <section class="employee-summary">
 
-</div>
+        <div class="summary-box">
+            <strong id="activeCount">0</strong>
+            <span>在職</span>
+        </div>
 
-<div class="card">
+        <div class="summary-box">
+            <strong id="leaveCount">0</strong>
+            <span>請假</span>
+        </div>
 
-<button>➕ 新增員工</button>
+        <div class="summary-box">
+            <strong id="resignedCount">0</strong>
+            <span>離職</span>
+        </div>
 
-</div>
+    </section>
 
-<div class="card">
+    <section class="employee-tools">
 
-<a href="index.html">
-🏠 回首頁
-</a>
+        <input
+            type="search"
+            id="employeeSearch"
+            placeholder="搜尋員工姓名"
+        >
 
-</div>
+        <button
+            type="button"
+            id="openEmployeeForm"
+            class="primary-button"
+        >
+            ＋ 新增員工
+        </button>
+
+    </section>
+
+    <section id="employeeList" class="employee-list">
+
+        <div class="empty-state">
+            <p>目前尚未建立員工資料</p>
+            <span>請按「新增員工」開始建立</span>
+        </div>
+
+    </section>
+
+</main>
+
+<div id="employeeModal" class="modal hidden">
+
+    <div class="modal-card">
+
+        <div class="modal-title">
+            <h2 id="formTitle">新增員工</h2>
+
+            <button
+                type="button"
+                id="closeEmployeeForm"
+                class="close-button"
+            >
+                ×
+            </button>
+        </div>
+
+        <form id="employeeForm">
+
+            <input type="hidden" id="employeeId">
+
+            <label for="employeeName">姓名</label>
+            <input
+                type="text"
+                id="employeeName"
+                placeholder="請輸入員工姓名"
+                required
+            >
+
+            <label for="employeeType">人員類型</label>
+            <select id="employeeType">
+                <option value="正職">正職</option>
+                <option value="工讀生">工讀生</option>
+                <option value="移工">移工</option>
+            </select>
+
+            <label for="employeeStatus">目前狀態</label>
+            <select id="employeeStatus">
+                <option value="在職">在職</option>
+                <option value="請假">請假</option>
+                <option value="離職">離職</option>
+            </select>
+
+            <label for="employeeNote">備註</label>
+            <textarea
+                id="employeeNote"
+                rows="3"
+                placeholder="沒有備註可以留白"
+            ></textarea>
+
+            <button type="submit" class="save-button">
+                儲存員工資料
+            </button>
+
+        </form>
+
+    </div>
 
 </div>
 
