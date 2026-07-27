@@ -1,69 +1,217 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>濬宏企業有限公司</title>
-
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111827" />
+  <title>人力計算系統 V1</title>
+  <style>
+    :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--warn:#b45309;--bad:#b91c1c}
+    *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
+    .app{max-width:760px;margin:auto;padding:14px 14px 90px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.top h1{font-size:22px;margin:0}.tag{font-size:12px;background:#e5e7eb;padding:5px 9px;border-radius:999px}
+    .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 6px;font-weight:700}.tab.active{background:var(--accent);color:#fff}
+    .panel{display:none}.panel.active{display:block}.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+    h2{font-size:17px;margin:0 0 14px}label{display:block;font-weight:700;margin:12px 0 7px}.hint{font-size:13px;color:var(--muted)}
+    select,input[type=number],input[type=text],input[type=date]{width:100%;padding:13px 12px;border:1px solid #d1d5db;border-radius:12px;font-size:16px;background:#fff}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.choice{display:flex;gap:8px}.choice label{flex:1;margin:0}.choice input{display:none}.choice span{display:block;border:1px solid #d1d5db;border-radius:12px;padding:12px;text-align:center;font-weight:700}.choice input:checked+span{background:#111827;color:#fff;border-color:#111827}
+    .check{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;margin-top:8px}.check input{width:20px;height:20px}
+    .employee-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.emp.absent{background:#fef2f2;border-color:#fecaca;color:#991b1b}.leave-row{display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:7px;align-items:center;margin:8px 0}.leave-row input,.leave-row select{padding:9px;font-size:14px}.emp{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px}.emp input{width:18px;height:18px}
+    button.primary{width:100%;border:0;border-radius:14px;background:#111827;color:#fff;padding:15px;font-size:17px;font-weight:800;margin-top:12px}.secondary{border:1px solid #d1d5db;background:#fff;border-radius:10px;padding:9px 12px;font-weight:700}.danger{border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:9px;padding:7px 9px}
+    .result{display:none}.result.show{display:block}.big{font-size:42px;font-weight:900;text-align:center;margin:4px 0}.status{text-align:center;font-weight:800;margin-bottom:15px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat{border:1px solid var(--line);border-radius:12px;padding:12px}.stat small{color:var(--muted);display:block}.stat strong{font-size:22px}.full{grid-column:1/-1}
+    .settings-row{display:grid;grid-template-columns:1fr 90px 78px 36px;gap:7px;align-items:center;margin:8px 0}.settings-row.employee{grid-template-columns:1fr 92px 36px}.settings-row input,.settings-row select{padding:9px;font-size:14px}
+    table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:10px 6px;border-bottom:1px solid var(--line)}
+    .empty{color:var(--muted);text-align:center;padding:20px 0}.notice{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:12px;padding:11px;font-size:14px}
+    @media(max-width:480px){.employee-grid{grid-template-columns:1fr}.row{grid-template-columns:1fr}.settings-row{grid-template-columns:1fr 74px 66px 36px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
 </head>
-
 <body>
+<div class="app">
+  <div class="top"><h1>人力計算系統</h1><span class="tag">V1</span></div>
+  <div class="tabs">
+    <button class="tab active" data-tab="calc">人力計算</button>
+    <button class="tab" data-tab="settings">設定</button>
+    <button class="tab" data-tab="records">每日紀錄</button>
+  </div>
 
-<div class="header">
+  <section id="calc" class="panel active">
+    <div class="card">
+      <h2>今日生產條件</h2>
+      <label>產品尺寸</label><select id="product"></select>
+      <label>洗料模式</label>
+      <div class="choice">
+        <label><input type="radio" name="wash" value="1" checked><span>洗1個</span></label>
+        <label><input type="radio" name="wash" value="2"><span>洗2個</span></label>
+      </div>
+      <label>特殊製程</label>
+      <label class="check"><input id="jubao" type="checkbox"><span>巨堡印刷（裝箱增加1人）</span></label>
+      <label class="check"><input id="screw" type="checkbox"><span>鎖螺絲／拆螺絲</span></label>
+    </div>
 
-    <h1>濬宏企業有限公司</h1>
+    <div class="card">
+      <h2>今日臨時請假</h2>
+      <div class="hint">同一天會保留，隔天自動重置。紅色代表今日請假。</div>
+      <div id="employeeList" class="employee-grid" style="margin-top:10px"></div>
+      <button id="clearAbsence" class="secondary" style="margin-top:10px">清除今日臨時請假</button>
+    </div>
 
-    <p>人力管理系統</p>
+    <div class="card">
+      <h2>日期區間請假</h2>
+      <div class="hint">設定期間後會每天自動計入請假；結束日隔天自動恢復到班。</div>
+      <div id="leaveSettings"></div>
+      <button id="addLeave" class="secondary">新增區間請假</button>
+    </div>
 
-    <span>Version v0.0.1</span>
+    <button id="calculate" class="primary">開始計算</button>
 
+    <div id="result" class="card result">
+      <h2>計算結果</h2>
+      <div class="status" style="margin-bottom:4px">還需要學生</div><div id="missingBig" class="big">0 人</div>
+      <div id="statusText" class="status"></div>
+      <div class="stats">
+        <div class="stat"><small>今日需求</small><strong id="need">0</strong> 人</div>
+        <div class="stat"><small>正式員工總數</small><strong id="formalTotal">0</strong> 人</div>
+        <div class="stat"><small>請假</small><strong id="absentCount">0</strong> 人</div>
+        <div class="stat"><small>正式員工實到</small><strong id="formalPresent">0</strong> 人</div>
+        <div class="stat full"><small>計算條件</small><strong id="conditions" style="font-size:16px"></strong></div>
+      </div>
+      <button id="saveRecord" class="primary">儲存今日人力</button>
+    </div>
+  </section>
+
+  <section id="settings" class="panel">
+    <div class="notice">所有設定只儲存在這台裝置的瀏覽器中；之後接 Supabase 時可改成多人共用。</div>
+    <div class="card">
+      <h2>產品需求設定</h2>
+      <div class="hint">基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。</div>
+      <div id="productSettings"></div>
+      <button id="addProduct" class="secondary">新增產品</button>
+    </div>
+    <div class="card">
+      <h2>特殊規則</h2>
+      <label>洗2個增加人數</label><input id="wash2Add" type="number" min="0">
+      <label>巨堡印刷增加人數</label><input id="jubaoAdd" type="number" min="0">
+      <button id="saveRules" class="primary">儲存規則</button>
+    </div>
+    <div class="card">
+      <h2>正式員工名單</h2>
+      <div id="employeeSettings"></div>
+      <button id="addEmployee" class="secondary">新增員工</button>
+      <button id="saveEmployees" class="primary">儲存員工名單</button>
+    </div>
+  </section>
+
+  <section id="records" class="panel">
+    <div class="card">
+      <h2>每日紀錄</h2>
+      <div id="recordWrap"></div>
+      <button id="clearRecords" class="danger" style="margin-top:12px">清除全部紀錄</button>
+    </div>
+  </section>
 </div>
+<script>
+const defaults={
+ products:[
+  {id:'p1',name:'260mm',base:38,screwAdd:2},
+  {id:'p2',name:'310mm',base:38,screwAdd:2},
+  {id:'p3',name:'13吋',base:36,screwAdd:0},
+  {id:'p4',name:'200mm',base:36,screwAdd:0},
+  {id:'p5',name:'410mm',base:36,screwAdd:1}
+ ],
+ rules:{wash2Add:3,jubaoAdd:1},
+ employees:['老大','老成','徐先生','阿蓁','阿香','阿順','陳淑君','阿珊','阿嬌','阿春','阿伯','秋妹','阿興','阿緣','阿區','阿草','如意','阿還','大宴','阿明','馬龍','安娜','小小玲','曉玲','阿六','阿貴','大玲','成論','中後','阿賢','進雄','阿維','阿明敏']
+};
+let data=JSON.parse(localStorage.getItem('manpowerV1Data')||'null')||structuredClone(defaults);
+let lastResult=null;
+function todayISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function loadTempAbsence(){
+ const saved=JSON.parse(localStorage.getItem('manpowerV1TempAbsence')||'null');
+ return saved&&saved.date===todayISO()?saved.names:[];
+}
+function saveTempAbsence(names){localStorage.setItem('manpowerV1TempAbsence',JSON.stringify({date:todayISO(),names}))}
+function loadLeaves(){return JSON.parse(localStorage.getItem('manpowerV1Leaves')||'[]')}
+function saveLeaves(v){localStorage.setItem('manpowerV1Leaves',JSON.stringify(v))}
+function activeLeaveNames(){
+ const t=todayISO();
+ return [...new Set(loadLeaves().filter(x=>x.start<=t&&t<=x.end).map(x=>x.name))];
+}
+const $=id=>document.getElementById(id);
+function persist(){localStorage.setItem('manpowerV1Data',JSON.stringify(data))}
+function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function renderCalc(){
+ $('product').innerHTML=data.products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+ const temp=loadTempAbsence(), range=activeLeaveNames();
+ $('employeeList').innerHTML=data.employees.map((n,i)=>{
+   const checked=temp.includes(n)||range.includes(n);
+   const locked=range.includes(n);
+   return `<label class="emp ${checked?'absent':''}"><input type="checkbox" value="${i}" data-name="${esc(n)}" ${checked?'checked':''} ${locked?'disabled':''}><span>${esc(n)}${locked?'（區間請假）':''}</span></label>`;
+ }).join('');
+ renderLeaves();
+}
+function renderLeaves(){
+ const leaves=loadLeaves();
+ $('leaveSettings').innerHTML=leaves.length?leaves.map((x,i)=>`<div class="leave-row">
+   <select data-lname="${i}">${data.employees.map(n=>`<option ${n===x.name?'selected':''}>${esc(n)}</option>`).join('')}</select>
+   <input data-lstart="${i}" type="date" value="${x.start}">
+   <input data-lend="${i}" type="date" value="${x.end}">
+   <button class="danger" data-delleave="${i}">×</button>
+ </div>`).join(''):'<div class="empty">尚未設定區間請假</div>';
+}
+function saveLeaveInputs(){
+ const names=[...document.querySelectorAll('[data-lname]')];
+ const starts=[...document.querySelectorAll('[data-lstart]')];
+ const ends=[...document.querySelectorAll('[data-lend]')];
+ const arr=names.map((n,i)=>({name:n.value,start:starts[i].value,end:ends[i].value})).filter(x=>x.name&&x.start&&x.end&&x.start<=x.end);
+ saveLeaves(arr);
+}
+function renderSettings(){
+ $('productSettings').innerHTML=data.products.map((p,i)=>`<div class="settings-row"><input data-pname="${i}" value="${esc(p.name)}"><input data-pbase="${i}" type="number" min="0" value="${p.base}"><input data-pscrew="${i}" type="number" min="0" value="${p.screwAdd}"><button class="danger" data-delproduct="${i}">×</button></div>`).join('')+
+ `<div class="settings-row hint"><span>產品名稱</span><span>基本人數</span><span>拆螺絲+</span><span></span></div>`;
+ $('wash2Add').value=data.rules.wash2Add;$('jubaoAdd').value=data.rules.jubaoAdd;
+ $('employeeSettings').innerHTML=data.employees.map((n,i)=>`<div class="settings-row employee"><input data-ename="${i}" value="${esc(n)}"><span class="hint">正式員工</span><button class="danger" data-delemp="${i}">×</button></div>`).join('');
+}
+function renderRecords(){
+ const records=JSON.parse(localStorage.getItem('manpowerV1Records')||'[]');
+ if(!records.length){$('recordWrap').innerHTML='<div class="empty">尚無紀錄</div>';return}
+ $('recordWrap').innerHTML=`<table><thead><tr><th>日期</th><th>產品</th><th>需求</th><th>實到</th><th>缺學生</th></tr></thead><tbody>${records.map(r=>`<tr><td>${r.date}</td><td>${esc(r.product)}</td><td>${r.need}</td><td>${r.totalPresent}</td><td>${r.missing}</td></tr>`).join('')}</tbody></table>`;
+}
+function calc(){
+ const p=data.products.find(x=>x.id===$('product').value); if(!p)return;
+ const wash=Number(document.querySelector('input[name=wash]:checked').value);
+ const absentNames=[...new Set([
+   ...[...document.querySelectorAll('#employeeList input:checked')].map(x=>x.dataset.name),
+   ...activeLeaveNames()
+ ])];
+ const absent=absentNames.length;
+ let need=p.base+(wash===2?data.rules.wash2Add:0)+($('jubao').checked?data.rules.jubaoAdd:0)+($('screw').checked?p.screwAdd:0);
+ const formalTotal=data.employees.length, formalPresent=Math.max(0,formalTotal-absent), missing=Math.max(0,need-formalPresent);
+ lastResult={date:new Date().toLocaleDateString('zh-TW'),product:p.name,need,formalTotal,absent,formalPresent,totalPresent:formalPresent,missing,wash,jubao:$('jubao').checked,screw:$('screw').checked};
+ $('need').textContent=need;$('formalTotal').textContent=formalTotal;$('absentCount').textContent=absent;$('formalPresent').textContent=formalPresent;
+ $('missingBig').textContent=`${missing} 人`;
+ $('statusText').textContent=missing>0?`今天請安排 ${missing} 位學生`:'今天不需要叫學生';
+ $('statusText').style.color=missing>0?'var(--bad)':'var(--ok)';$('missingBig').style.color=missing>0?'var(--bad)':'var(--ok)';
+ $('conditions').textContent=`${p.name}｜洗${wash}個${$('jubao').checked?'｜巨堡':''}${$('screw').checked?'｜拆螺絲':''}`;
+ $('result').classList.add('show');$('result').scrollIntoView({behavior:'smooth'});
+}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');if(b.dataset.tab==='settings')renderSettings();if(b.dataset.tab==='records')renderRecords()});
+$('calculate').onclick=calc;
+$('employeeList').onchange=()=>{
+ const temp=[...document.querySelectorAll('#employeeList input:checked:not(:disabled)')].map(x=>x.dataset.name);
+ saveTempAbsence(temp);renderCalc();
+};
+$('clearAbsence').onclick=()=>{saveTempAbsence([]);renderCalc()};
+$('addLeave').onclick=()=>{const arr=loadLeaves();arr.push({name:data.employees[0]||'',start:todayISO(),end:todayISO()});saveLeaves(arr);renderCalc()};
+$('leaveSettings').onchange=()=>{saveLeaveInputs();renderCalc()};
+$('leaveSettings').onclick=e=>{if(e.target.dataset.delleave!==undefined){const arr=loadLeaves();arr.splice(Number(e.target.dataset.delleave),1);saveLeaves(arr);renderCalc()}};
 
-<div class="menu">
-
-    <a href="employee.html" class="card">
-        👥
-        <h2>員工管理</h2>
-    </a>
-
-    <a href="product.html" class="card">
-        📦
-        <h2>產品管理</h2>
-    </a>
-
-    <a href="calculator.html" class="card">
-        🧮
-        <h2>人力計算</h2>
-    </a>
-
-    <a href="records.html" class="card">
-        📋
-        <h2>每日紀錄</h2>
-    </a>
-
-    <a href="settings.html" class="card">
-        ⚙️
-        <h2>設定</h2>
-    </a>
-
-</div>
-
-<div class="bottom">
-
-    <a href="index.html">🏠</a>
-
-    <a href="employee.html">👥</a>
-
-    <a href="calculator.html">🧮</a>
-
-    <a href="records.html">📋</a>
-
-    <a href="settings.html">⚙️</a>
-
-</div>
-
-<script src="js/app.js"></script>
-
+$('saveRecord').onclick=()=>{if(!lastResult)return;const arr=JSON.parse(localStorage.getItem('manpowerV1Records')||'[]');arr.unshift(lastResult);localStorage.setItem('manpowerV1Records',JSON.stringify(arr.slice(0,365)));alert('已儲存今日人力紀錄');};
+$('addProduct').onclick=()=>{data.products.push({id:'p'+Date.now(),name:'新產品',base:0,screwAdd:0});renderSettings()};
+$('productSettings').onclick=e=>{if(e.target.dataset.delproduct!==undefined){data.products.splice(Number(e.target.dataset.delproduct),1);persist();renderSettings();renderCalc()}};
+$('saveRules').onclick=()=>{document.querySelectorAll('[data-pname]').forEach(x=>{let i=+x.dataset.pname;data.products[i].name=x.value.trim()||'未命名'});document.querySelectorAll('[data-pbase]').forEach(x=>data.products[+x.dataset.pbase].base=Math.max(0,+x.value||0));document.querySelectorAll('[data-pscrew]').forEach(x=>data.products[+x.dataset.pscrew].screwAdd=Math.max(0,+x.value||0));data.rules.wash2Add=Math.max(0,+$('wash2Add').value||0);data.rules.jubaoAdd=Math.max(0,+$('jubaoAdd').value||0);persist();renderCalc();alert('產品與規則已儲存')};
+$('addEmployee').onclick=()=>{data.employees.push('新員工');renderSettings()};
+$('employeeSettings').onclick=e=>{if(e.target.dataset.delemp!==undefined){data.employees.splice(Number(e.target.dataset.delemp),1);renderSettings()}};
+$('saveEmployees').onclick=()=>{data.employees=[...document.querySelectorAll('[data-ename]')].map(x=>x.value.trim()).filter(Boolean);persist();renderCalc();alert('員工名單已儲存')};
+$('clearRecords').onclick=()=>{if(confirm('確定清除全部每日紀錄？')){localStorage.removeItem('manpowerV1Records');renderRecords()}};
+renderCalc();
+</script>
 </body>
 </html>
