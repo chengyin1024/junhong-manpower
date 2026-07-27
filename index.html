@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#111827" />
-  <title>人力計算系統 V1.3</title>
+  <title>人力計算系統 V2.0.1</title>
   <style>
     :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--warn:#b45309;--bad:#b91c1c}
     *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
@@ -90,8 +89,15 @@
       white-space:nowrap;
     }
     .toast.show{opacity:1;transform:translate(-50%,0)}
+    .cloud-status{display:flex;align-items:center;gap:8px;font-weight:800;margin:10px 0}
+    .cloud-dot{width:10px;height:10px;border-radius:50%;background:#9ca3af}
+    .cloud-dot.online{background:#16a34a}.cloud-dot.error{background:#dc2626}
+    .cloud-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .cloud-actions button{margin-top:0}
+    .cloud-note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
 
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="app">
@@ -99,7 +105,7 @@
     <h1 data-i18n="appTitle">人力計算系統</h1>
     <div class="top-actions">
       <button id="langSwitch" class="lang-btn" type="button">VI</button>
-      <span class="tag">V1.3</span>
+      <span class="tag">V2.0.1</span>
     </div>
   </div>
   <div class="tabs">
@@ -110,7 +116,8 @@
 
   <section id="calc" class="panel active">
     <div class="card">
-      <h2 data-i18n="todayConditions">今日生產條件</h2>
+      <h2 data-i18n="todayConditions">生產條件</h2>
+      <label data-i18n="queryDate">查詢日期</label><input id="queryDate" type="date">
       <label data-i18n="productSize">產品尺寸</label><select id="product"></select>
       <label data-i18n="washMode">洗料模式</label>
       <div class="choice">
@@ -123,10 +130,10 @@
     </div>
 
     <div class="card">
-      <h2 data-i18n="tempLeave">今日臨時請假</h2>
-      <div class="hint" data-i18n="tempLeaveHint">同一天會保留，隔天自動重置。紅色代表今日請假。</div>
+      <h2 data-i18n="tempLeave">臨時請假</h2>
+      <div class="hint" data-i18n="tempLeaveHint">每個日期分別儲存。紅色代表所選日期請假。</div>
       <div id="employeeList" class="employee-grid" style="margin-top:10px"></div>
-      <button id="clearAbsence" class="secondary" style="margin-top:10px"><span data-i18n="clearTempLeave">清除今日臨時請假</span></button>
+      <button id="clearAbsence" class="secondary" style="margin-top:10px"><span data-i18n="clearTempLeave">清除所選日期臨時請假</span></button>
     </div>
 
     <div class="card">
@@ -149,12 +156,25 @@
         <div class="stat"><small data-i18n="formalPresent">正式員工實到</small><strong id="formalPresent">0</strong> 人</div>
         <div class="stat full"><small data-i18n="conditions">計算條件</small><strong id="conditions" style="font-size:16px"></strong></div>
       </div>
-      <button id="saveRecord" class="primary" data-i18n="saveToday">儲存今日人力</button>
+      <button id="saveRecord" class="primary" data-i18n="saveToday">儲存所選日期人力</button>
     </div>
   </section>
 
   <section id="settings" class="panel">
-    <div class="notice" data-i18n="storageNotice">所有設定會儲存在這台裝置的瀏覽器中。</div>
+    <div class="notice">V2.0 支援 Supabase 雲端同步；未連線時仍可使用本機資料。</div>
+    <div class="card">
+      <h2>雲端同步設定</h2>
+      <label>Supabase Project URL</label><input id="supabaseUrl" type="text" placeholder="https://xxxx.supabase.co">
+      <label>Supabase Publishable／Anon Key</label><input id="supabaseKey" type="text" placeholder="貼上 publishable key 或 anon key">
+      <div class="cloud-status"><span id="cloudDot" class="cloud-dot"></span><span id="cloudStatus">尚未連線</span></div>
+      <div class="cloud-actions">
+        <button id="connectCloud" class="secondary" type="button">連線雲端</button>
+        <button id="disconnectCloud" class="secondary" type="button">中斷連線</button>
+        <button id="uploadCloud" class="secondary" type="button">上傳本機資料</button>
+        <button id="downloadCloud" class="secondary" type="button">下載雲端資料</button>
+      </div>
+      <div class="cloud-note">連線後，新增、修改、刪除、請假與每日紀錄會自動同步。第一次使用請先在 Supabase 執行隨附的 SQL。</div>
+    </div>
     <div class="card">
       <h2 data-i18n="productSettings">產品需求設定</h2>
       <div class="hint" data-i18n="productHint">基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。</div>
@@ -187,39 +207,86 @@
 <script>
 const defaults={
  products:[
-  {id:'p1',name:'260mm',base:38,screwAdd:2},
-  {id:'p2',name:'310mm',base:38,screwAdd:2},
+  {id:'p1',name:'260mm',base:39,screwAdd:2},
+  {id:'p2',name:'310mm',base:39,screwAdd:2},
   {id:'p3',name:'13吋',base:36,screwAdd:0},
   {id:'p4',name:'200mm',base:36,screwAdd:0},
-  {id:'p5',name:'410mm',base:36,screwAdd:1}
+  {id:'p5',name:'410mm',base:37,screwAdd:1}
  ],
  rules:{wash2Add:3,jubaoAdd:1},
- employees:['老大','老成','徐先生','阿蓁','阿香','阿順','陳淑君','阿珊','阿嬌','阿春','阿伯','秋妹','阿興','阿緣','阿區','阿草','如意','阿還','大宴','阿明','馬龍','安娜','小小玲','曉玲','阿六','阿貴','大玲','成論','中後','阿賢','進雄','阿維','阿明敏']
+ employees:['陳欽境','程樹生','徐文正','陳芊蓁','宋金香','阮蓓葩','陳淑君','陳立君','陳李嬌','陳榮春','吳棟茂','阮氏秋妹','陳文興','丁氏碧緣','阮文區','黃氏草','黎如意','陳文還','黎氏燕','阮庭明','馬龍','安娜','阮氏玉玲','黃氏玲','陳氏乙六','陳文貴','阮氏玲','楊成論','范中後','馮賢','進雄','范祥維','阮明敏']
 };
 let data=JSON.parse(localStorage.getItem('manpowerV1Data')||'null')||structuredClone(defaults);
+
+const employeeNameMap={
+ '阿賢':'馮賢','阿維':'范祥維','阿明敏':'阮明敏','老大':'陳欽境','老成':'程樹生','徐先生':'徐文正',
+ '阿蓁':'陳芊蓁','阿香':'宋金香','阿順':'阮蓓葩','阿珊':'陳立君','阿嬌':'陳李嬌','阿春':'陳榮春',
+ '阿伯':'吳棟茂','秋妹':'阮氏秋妹','阿興':'陳文興','阿緣':'丁氏碧緣','阿區':'阮文區','阿草':'黃氏草',
+ '如意':'黎如意','阿還':'陳文還','大宴':'黎氏燕','阿明':'阮庭明','小小玲':'阮氏玉玲','曉鈴':'黃氏玲',
+ '曉玲':'黃氏玲','阿六':'陳氏乙六','阿貴':'陳文貴','大玲':'阮氏玲','成論':'楊成論','中後':'范中後'
+};
+function migrateName(name){return employeeNameMap[name]||name}
+function migrateStoredData(){
+ let changed=false;
+ data.employees=(data.employees||[]).map(n=>{const nn=migrateName(n);if(nn!==n)changed=true;return nn});
+ data.employees=[...new Set(data.employees)];
+ const requiredBases={'260mm':39,'310mm':39,'410mm':37};
+ (data.products||[]).forEach(p=>{if(requiredBases[p.name]!==undefined&&p.base!==requiredBases[p.name]){p.base=requiredBases[p.name];changed=true}});
+ const leaves=JSON.parse(localStorage.getItem('manpowerV1Leaves')||'[]');
+ const migratedLeaves=leaves.map(x=>({...x,name:migrateName(x.name)}));
+ if(JSON.stringify(leaves)!==JSON.stringify(migratedLeaves))localStorage.setItem('manpowerV1Leaves',JSON.stringify(migratedLeaves));
+ const oldTemp=JSON.parse(localStorage.getItem('manpowerV1TempAbsence')||'null');
+ if(oldTemp?.date&&Array.isArray(oldTemp.names)){
+   const all=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
+   all[oldTemp.date]=oldTemp.names.map(migrateName);
+   localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(all));
+   localStorage.removeItem('manpowerV1TempAbsence');
+ }
+ const byDate=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
+ let tempChanged=false;
+ Object.keys(byDate).forEach(d=>{const names=(byDate[d]||[]).map(migrateName);if(JSON.stringify(names)!==JSON.stringify(byDate[d]))tempChanged=true;byDate[d]=[...new Set(names)]});
+ if(tempChanged)localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(byDate));
+ if(changed)localStorage.setItem('manpowerV1Data',JSON.stringify(data));
+}
+migrateStoredData();
+// 修復舊測試版造成「全部產品都變成新產品」的已知損壞資料。
+(function repairCorruptedProducts(){
+  const products=Array.isArray(data.products)?data.products:[];
+  const genericNames=new Set(['新產品','Sản phẩm mới','未命名','Chưa đặt tên']);
+  const allGeneric=products.length>=5 && products.every(p=>genericNames.has(String(p.name||'').trim()));
+  if(allGeneric){
+    data.products=structuredClone(defaults.products);
+    persist();
+  }
+})();
 let lastResult=null;
 function todayISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
-function loadTempAbsence(){
- const saved=JSON.parse(localStorage.getItem('manpowerV1TempAbsence')||'null');
- return saved&&saved.date===todayISO()?saved.names:[];
+function selectedDate(){return $('queryDate')?.value||todayISO()}
+function loadTempAbsence(date=selectedDate()){
+ const all=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
+ return Array.isArray(all[date])?all[date]:[];
 }
-function saveTempAbsence(names){localStorage.setItem('manpowerV1TempAbsence',JSON.stringify({date:todayISO(),names}))}
+function saveTempAbsence(names,date=selectedDate()){
+ const all=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
+ all[date]=[...new Set(names)];
+ localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(all));
+ scheduleCloudUpload();
+}
 function loadLeaves(){return JSON.parse(localStorage.getItem('manpowerV1Leaves')||'[]')}
-function saveLeaves(v){localStorage.setItem('manpowerV1Leaves',JSON.stringify(v))}
-function activeLeaveNames(){
- const t=todayISO();
- return [...new Set(loadLeaves().filter(x=>x.start<=t&&t<=x.end).map(x=>x.name))];
+function saveLeaves(v){localStorage.setItem('manpowerV1Leaves',JSON.stringify(v));scheduleCloudUpload()}
+function activeLeaveNames(date=selectedDate()){
+ return [...new Set(loadLeaves().filter(x=>x.start<=date&&date<=x.end).map(x=>x.name))];
 }
 const $=id=>document.getElementById(id);
 const translations={
   zh:{
     appTitle:'人力計算系統',tabCalc:'人力計算',tabSettings:'設定',tabRecords:'每日紀錄',
-    todayConditions:'今日生產條件',productSize:'產品尺寸',washMode:'洗料模式',washOne:'洗1個',washTwo:'洗2個',
+    todayConditions:'生產條件',queryDate:'查詢日期',productSize:'產品尺寸',washMode:'洗料模式',washOne:'洗1個',washTwo:'洗2個',
     specialProcess:'特殊製程',jubaoPrint:'巨堡印刷（裝箱增加1人）',screwProcess:'鎖螺絲／拆螺絲',
-    tempLeave:'今日臨時請假',tempLeaveHint:'同一天會保留，隔天自動重置。紅色代表今日請假。',clearTempLeave:'清除今日臨時請假',
+    tempLeave:'今日臨時請假',tempLeaveHint:'每個日期分別儲存。紅色代表所選日期請假。',clearTempLeave:'清除所選日期臨時請假',
     rangeLeave:'日期區間請假',rangeLeaveHint:'設定期間後會每天自動計入請假；結束日隔天自動恢復到班。',addRangeLeave:'新增區間請假',
     calculate:'開始計算',resultTitle:'計算結果',studentsNeeded:'還需要學生',todayNeed:'今日需求',formalTotal:'正式員工總數',
-    leaveCount:'請假',formalPresent:'正式員工實到',conditions:'計算條件',saveToday:'儲存今日人力',
+    leaveCount:'請假',formalPresent:'正式員工實到',conditions:'計算條件',saveToday:'儲存所選日期人力',
     storageNotice:'所有設定會儲存在這台裝置的瀏覽器中。',productSettings:'產品需求設定',
     productHint:'基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。',addProduct:'新增產品',
     specialRules:'特殊規則',washTwoAdd:'洗2個增加人數',jubaoAdd:'巨堡印刷增加人數',saveRules:'儲存規則',
@@ -230,16 +297,16 @@ const translations={
     arrangeStudents:n=>`今天請安排 ${n} 位學生`,noStudent:'今天不需要叫學生',person:'人',
     washCondition:n=>`洗${n}個`,jubaoShort:'巨堡',screwShort:'拆螺絲',
     added:'新增成功',saved:'儲存成功',deleted:'刪除成功',cleared:'清除成功',
-    confirmClear:'確定清除全部每日紀錄？',newProduct:'新產品',unnamed:'未命名',newEmployee:'新員工'
+    confirmClear:'確定清除全部每日紀錄？',confirmDelete:'確定要刪除嗎？',newProduct:'新產品',unnamed:'未命名',newEmployee:'新員工'
   },
   vi:{
     appTitle:'Hệ thống tính nhân lực',tabCalc:'Tính nhân lực',tabSettings:'Cài đặt',tabRecords:'Lịch sử hằng ngày',
-    todayConditions:'Điều kiện sản xuất hôm nay',productSize:'Kích thước sản phẩm',washMode:'Chế độ rửa',washOne:'Rửa 1 bộ',washTwo:'Rửa 2 bộ',
+    todayConditions:'Điều kiện sản xuất',queryDate:'Ngày tra cứu',productSize:'Kích thước sản phẩm',washMode:'Chế độ rửa',washOne:'Rửa 1 bộ',washTwo:'Rửa 2 bộ',
     specialProcess:'Công đoạn đặc biệt',jubaoPrint:'In Jubao (tăng 1 người đóng thùng)',screwProcess:'Vặn vít / tháo vít',
-    tempLeave:'Nghỉ tạm thời hôm nay',tempLeaveHint:'Được giữ trong ngày và tự đặt lại vào ngày mai. Màu đỏ là nghỉ hôm nay.',clearTempLeave:'Xóa nghỉ tạm thời hôm nay',
+    tempLeave:'Nghỉ tạm thời',tempLeaveHint:'Mỗi ngày được lưu riêng. Màu đỏ là nghỉ vào ngày đã chọn.',clearTempLeave:'Xóa nghỉ tạm thời của ngày đã chọn',
     rangeLeave:'Nghỉ theo khoảng ngày',rangeLeaveHint:'Sau khi cài đặt, hệ thống tự tính nghỉ mỗi ngày; ngày sau khi kết thúc sẽ tự đi làm lại.',addRangeLeave:'Thêm nghỉ theo khoảng ngày',
     calculate:'Bắt đầu tính',resultTitle:'Kết quả tính',studentsNeeded:'Số sinh viên cần thêm',todayNeed:'Nhu cầu hôm nay',formalTotal:'Tổng nhân viên chính thức',
-    leaveCount:'Nghỉ',formalPresent:'Nhân viên chính thức có mặt',conditions:'Điều kiện tính',saveToday:'Lưu nhân lực hôm nay',
+    leaveCount:'Nghỉ',formalPresent:'Nhân viên chính thức có mặt',conditions:'Điều kiện tính',saveToday:'Lưu nhân lực ngày đã chọn',
     storageNotice:'Mọi cài đặt được lưu trong trình duyệt của thiết bị này.',productSettings:'Cài đặt nhu cầu sản phẩm',
     productHint:'Nhu cầu cơ bản lấy mốc: rửa 1 bộ, không Jubao, không tháo vít.',addProduct:'Thêm sản phẩm',
     specialRules:'Quy tắc đặc biệt',washTwoAdd:'Số người tăng khi rửa 2 bộ',jubaoAdd:'Số người tăng khi in Jubao',saveRules:'Lưu quy tắc',
@@ -250,7 +317,7 @@ const translations={
     arrangeStudents:n=>`Hôm nay cần sắp xếp ${n} sinh viên`,noStudent:'Hôm nay không cần gọi sinh viên',person:'người',
     washCondition:n=>`Rửa ${n} bộ`,jubaoShort:'Jubao',screwShort:'Tháo vít',
     added:'Đã thêm thành công',saved:'Đã lưu thành công',deleted:'Đã xóa thành công',cleared:'Đã xóa thành công',
-    confirmClear:'Bạn có chắc muốn xóa toàn bộ lịch sử hằng ngày?',newProduct:'Sản phẩm mới',unnamed:'Chưa đặt tên',newEmployee:'Nhân viên mới'
+    confirmClear:'Bạn có chắc muốn xóa toàn bộ lịch sử hằng ngày?',confirmDelete:'Bạn có chắc muốn xóa không?',newProduct:'Sản phẩm mới',unnamed:'Chưa đặt tên',newEmployee:'Nhân viên mới'
   }
 };
 let lang=localStorage.getItem('manpowerV1Lang')||'zh';
@@ -262,7 +329,7 @@ function applyLanguage(){
   document.documentElement.lang=lang==='vi'?'vi':'zh-Hant';
   document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=tr(el.dataset.i18n)});
   $('langSwitch').textContent=lang==='zh'?'VI':'中文';
-  document.title=`${tr('appTitle')} V1.3`;
+  document.title=`${tr('appTitle')} V2.0.1`;
   renderCalc();
   const active=document.querySelector('.tab.active')?.dataset.tab;
   if(active==='settings')renderSettings();
@@ -270,7 +337,7 @@ function applyLanguage(){
   if(lastResult)updateResultText();
 }
 
-function persist(){localStorage.setItem('manpowerV1Data',JSON.stringify(data))}
+function persist(){localStorage.setItem('manpowerV1Data',JSON.stringify(data));scheduleCloudUpload()}
 function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 let toastTimer;
 function showToast(message){
@@ -283,7 +350,10 @@ function showToast(message){
 }
 
 function renderCalc(){
+ const currentProduct=$('product')?.value;
+ if(!$('queryDate').value)$('queryDate').value=todayISO();
  $('product').innerHTML=data.products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+ if(currentProduct&&data.products.some(p=>p.id===currentProduct))$('product').value=currentProduct;
  const temp=loadTempAbsence(), range=activeLeaveNames();
  $('employeeList').innerHTML=data.employees.map((n,i)=>{
    const checked=temp.includes(n)||range.includes(n);
@@ -298,7 +368,7 @@ function renderLeaves(){
    <select data-lname="${i}">${data.employees.map(n=>`<option ${n===x.name?'selected':''}>${esc(n)}</option>`).join('')}</select>
    <input data-lstart="${i}" type="date" value="${x.start}">
    <input data-lend="${i}" type="date" value="${x.end}">
-   <button class="danger" data-delleave="${i}">×</button>
+   <button type="button" class="danger" onclick="deleteLeave(${i})" aria-label="刪除">×</button>
  </div>`).join('') :`<div class="empty">${tr('emptyLeave')}</div>`;
 }
 function saveLeaveInputs(){
@@ -309,10 +379,10 @@ function saveLeaveInputs(){
  saveLeaves(arr);
 }
 function renderSettings(){
- $('productSettings').innerHTML=data.products.map((p,i)=>`<div class="settings-row"><input data-pname="${i}" value="${esc(p.name)}"><input data-pbase="${i}" type="number" min="0" value="${p.base}"><input data-pscrew="${i}" type="number" min="0" value="${p.screwAdd}"><button class="danger" data-delproduct="${i}">×</button></div>`).join('')+
+ $('productSettings').innerHTML=data.products.map((p,i)=>`<div class="settings-row"><input data-pname="${i}" value="${esc(p.name)}"><input data-pbase="${i}" type="number" min="0" value="${p.base}"><input data-pscrew="${i}" type="number" min="0" value="${p.screwAdd}"><button type="button" class="danger" onclick="deleteProduct(${i})" aria-label="刪除">×</button></div>`).join('')+
  `<div class="settings-row hint"><span>${tr('productName')}</span><span>${tr('basePeople')}</span><span>${tr('screwAdd')}</span><span></span></div>`;
  $('wash2Add').value=data.rules.wash2Add;$('jubaoAdd').value=data.rules.jubaoAdd;
- $('employeeSettings').innerHTML=data.employees.map((n,i)=>`<div class="settings-row employee"><input data-ename="${i}" value="${esc(n)}"><span class="hint">${tr('formalEmployee')}</span><button class="danger" data-delemp="${i}">×</button></div>`).join('');
+ $('employeeSettings').innerHTML=data.employees.map((n,i)=>`<div class="settings-row employee"><input data-ename="${i}" value="${esc(n)}"><span class="hint">${tr('formalEmployee')}</span><button type="button" class="danger" onclick="deleteEmployee(${i})" aria-label="刪除">×</button></div>`).join('');
 }
 function renderRecords(){
  const records=JSON.parse(localStorage.getItem('manpowerV1Records')||'[]');
@@ -328,6 +398,60 @@ function updateResultText(){
  $('conditions').textContent=`${lastResult.product}｜${tr('washCondition',lastResult.wash)}${lastResult.jubao?`｜${tr('jubaoShort')}`:''}${lastResult.screw?`｜${tr('screwShort')}`:''}`;
 }
 
+function syncProductInputs(){
+  document.querySelectorAll('[data-pname]').forEach(x=>{
+    const i=Number(x.dataset.pname);
+    if(data.products[i])data.products[i].name=x.value.trim()||tr('unnamed');
+  });
+  document.querySelectorAll('[data-pbase]').forEach(x=>{
+    const i=Number(x.dataset.pbase);
+    if(data.products[i])data.products[i].base=Math.max(0,Number(x.value)||0);
+  });
+  document.querySelectorAll('[data-pscrew]').forEach(x=>{
+    const i=Number(x.dataset.pscrew);
+    if(data.products[i])data.products[i].screwAdd=Math.max(0,Number(x.value)||0);
+  });
+}
+function syncEmployeeInputs(){
+  const inputs=[...document.querySelectorAll('[data-ename]')];
+  if(inputs.length)data.employees=inputs.map(x=>x.value.trim()).filter(Boolean);
+}
+function deleteProduct(index){
+  syncProductInputs();
+  if(!Number.isInteger(index)||!data.products[index])return;
+  if(!confirm(tr('confirmDelete')))return;
+  data.products.splice(index,1);
+  persist();
+  renderSettings();
+  renderCalc();
+  showToast(tr('deleted'));
+}
+function deleteLeave(index){
+  if(!Number.isInteger(index))return;
+  if(!confirm(tr('confirmDelete')))return;
+  const arr=loadLeaves();
+  if(!arr[index])return;
+  arr.splice(index,1);
+  saveLeaves(arr);
+  renderCalc();
+  showToast(tr('deleted'));
+}
+function deleteEmployee(index){
+  syncEmployeeInputs();
+  if(!Number.isInteger(index)||!data.employees[index])return;
+  if(!confirm(tr('confirmDelete')))return;
+  const removed=data.employees[index];
+  data.employees.splice(index,1);
+  persist();
+  saveLeaves(loadLeaves().filter(x=>x.name!==removed));
+  const all=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
+  Object.keys(all).forEach(d=>all[d]=(all[d]||[]).filter(n=>n!==removed));
+  localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(all));
+  renderSettings();
+  renderCalc();
+  showToast(tr('deleted'));
+}
+
 function calc(){
  const p=data.products.find(x=>x.id===$('product').value); if(!p)return;
  const wash=Number(document.querySelector('input[name=wash]:checked').value);
@@ -338,7 +462,7 @@ function calc(){
  const absent=absentNames.length;
  let need=p.base+(wash===2?data.rules.wash2Add:0)+($('jubao').checked?data.rules.jubaoAdd:0)+($('screw').checked?p.screwAdd:0);
  const formalTotal=data.employees.length, formalPresent=Math.max(0,formalTotal-absent), missing=Math.max(0,need-formalPresent);
- lastResult={date:new Date().toLocaleDateString('zh-TW'),product:p.name,need,formalTotal,absent,formalPresent,totalPresent:formalPresent,missing,wash,jubao:$('jubao').checked,screw:$('screw').checked};
+ lastResult={date:selectedDate(),product:p.name,need,formalTotal,absent,formalPresent,totalPresent:formalPresent,missing,wash,jubao:$('jubao').checked,screw:$('screw').checked};
  $('need').textContent=need;$('formalTotal').textContent=formalTotal;$('absentCount').textContent=absent;$('formalPresent').textContent=formalPresent;
  
  updateResultText();
@@ -346,30 +470,176 @@ function calc(){
  
  $('result').classList.add('show');$('result').scrollIntoView({behavior:'smooth'});
 }
+
+// ===== V2.0 Supabase cloud sync（正式資料表版） =====
+let cloudClient=null, cloudChannels=[], cloudReady=false, applyingRemote=false, cloudTimer=null, remoteTimer=null;
+const CLOUD_TABLES=[
+ 'manpower_settings','manpower_products','manpower_employees',
+ 'manpower_leave_records','manpower_temp_absences','manpower_daily_records'
+];
+function cloudConfig(){return JSON.parse(localStorage.getItem('manpowerV2CloudConfig')||'{}')}
+function setCloudStatus(text,state=''){
+ const el=$('cloudStatus'),dot=$('cloudDot'); if(!el||!dot)return;
+ el.textContent=text;dot.className='cloud-dot'+(state?' '+state:'');
+}
+function normalizeRecord(r){
+ return {
+  date:r.date||r.record_date||todayISO(),product:r.product||'',need:Number(r.need)||0,
+  formalTotal:Number(r.formalTotal??r.formal_total)||0,absent:Number(r.absent)||0,
+  formalPresent:Number(r.formalPresent??r.formal_present)||0,
+  totalPresent:Number(r.totalPresent??r.total_present)||0,missing:Number(r.missing)||0,
+  wash:Number(r.wash)||1,jubao:!!r.jubao,screw:!!r.screw
+ };
+}
+async function replaceTable(table,rows){
+ let q=cloudClient.from(table).delete();
+ if(table==='manpower_settings')q=q.neq('id','');
+ else if(table==='manpower_products')q=q.neq('id','');
+ else if(table==='manpower_employees')q=q.neq('name','');
+ else if(table==='manpower_leave_records')q=q.neq('employee_name','');
+ else if(table==='manpower_temp_absences')q=q.neq('employee_name','');
+ else if(table==='manpower_daily_records')q=q.gte('need',0);
+ const {error:deleteError}=await q;if(deleteError)throw deleteError;
+ if(rows.length){const {error}=await cloudClient.from(table).insert(rows);if(error)throw error;}
+}
+async function uploadCloud(silent=false){
+ if(!cloudReady||applyingRemote)return;
+ try{
+  syncProductInputs();syncEmployeeInputs();
+  const now=new Date().toISOString();
+  const settings=[{id:'main',wash2_add:Number(data.rules.wash2Add)||0,jubao_add:Number(data.rules.jubaoAdd)||0,language:lang,updated_at:now}];
+  const products=(data.products||[]).map((p,i)=>({id:String(p.id),name:p.name,base_people:Number(p.base)||0,screw_add:Number(p.screwAdd)||0,sort_order:i,updated_at:now}));
+  const employees=(data.employees||[]).map((name,i)=>({name,sort_order:i,updated_at:now}));
+  const leaves=loadLeaves().map(x=>({employee_name:x.name,start_date:x.start,end_date:x.end,updated_at:now}));
+  const byDate=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
+  const temp=[];Object.entries(byDate).forEach(([date,names])=>(names||[]).forEach(name=>temp.push({absence_date:date,employee_name:name})));
+  const records=(JSON.parse(localStorage.getItem('manpowerV1Records')||'[]')).map(r=>{
+   r=normalizeRecord(r);return {record_date:r.date,product:r.product,need:r.need,formal_total:r.formalTotal,absent:r.absent,formal_present:r.formalPresent,total_present:r.totalPresent,missing:r.missing,wash:r.wash,jubao:r.jubao,screw:r.screw};
+  });
+  applyingRemote=true;
+  try{
+   await replaceTable('manpower_settings',settings);
+   await replaceTable('manpower_products',products);
+   await replaceTable('manpower_employees',employees);
+   await replaceTable('manpower_leave_records',leaves);
+   await replaceTable('manpower_temp_absences',temp);
+   await replaceTable('manpower_daily_records',records);
+  } finally {applyingRemote=false;}
+  setCloudStatus('已連線・資料已同步','online');if(!silent)showToast('已上傳雲端');
+ }catch(err){applyingRemote=false;setCloudStatus('同步失敗：'+err.message,'error');if(!silent)alert('上傳失敗：'+err.message)}
+}
+async function downloadCloud(silent=false){
+ if(!cloudReady)return false;
+ try{
+  const [settingsR,productsR,employeesR,leavesR,tempR,recordsR]=await Promise.all([
+   cloudClient.from('manpower_settings').select('*').eq('id','main').maybeSingle(),
+   cloudClient.from('manpower_products').select('*').order('sort_order'),
+   cloudClient.from('manpower_employees').select('*').order('sort_order'),
+   cloudClient.from('manpower_leave_records').select('*').order('created_at'),
+   cloudClient.from('manpower_temp_absences').select('*').order('absence_date'),
+   cloudClient.from('manpower_daily_records').select('*').order('created_at',{ascending:false}).limit(365)
+  ]);
+  for(const r of [settingsR,productsR,employeesR,leavesR,tempR,recordsR])if(r.error)throw r.error;
+  const hasCloudData=(productsR.data?.length||employeesR.data?.length||leavesR.data?.length||tempR.data?.length||recordsR.data?.length);
+  if(!hasCloudData){if(!silent)showToast('雲端尚無資料');return false;}
+  applyingRemote=true;
+  try{
+   if(settingsR.data){data.rules={wash2Add:settingsR.data.wash2_add,jubaoAdd:settingsR.data.jubao_add};lang=settingsR.data.language||'zh';localStorage.setItem('manpowerV1Lang',lang);}
+   if(productsR.data?.length)data.products=productsR.data.map(p=>({id:p.id,name:p.name,base:p.base_people,screwAdd:p.screw_add}));
+   if(employeesR.data?.length)data.employees=employeesR.data.map(e=>e.name);
+   localStorage.setItem('manpowerV1Data',JSON.stringify(data));
+   localStorage.setItem('manpowerV1Leaves',JSON.stringify((leavesR.data||[]).map(x=>({name:x.employee_name,start:x.start_date,end:x.end_date}))));
+   const byDate={};(tempR.data||[]).forEach(x=>{(byDate[x.absence_date]??=[]).push(x.employee_name)});
+   localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(byDate));
+   localStorage.setItem('manpowerV1Records',JSON.stringify((recordsR.data||[]).map(x=>normalizeRecord(x))));
+   migrateStoredData();applyLanguage();renderCalc();renderSettings();renderRecords();
+  } finally {applyingRemote=false;}
+  setCloudStatus('已連線・已取得最新資料','online');if(!silent)showToast('已下載雲端資料');return true;
+ }catch(err){applyingRemote=false;setCloudStatus('下載失敗：'+err.message,'error');if(!silent)alert('下載失敗：'+err.message);return false;}
+}
+function scheduleCloudUpload(){
+ if(!cloudReady||applyingRemote)return;
+ clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>uploadCloud(true),900);
+}
+function scheduleRemoteDownload(){
+ if(!cloudReady||applyingRemote)return;
+ clearTimeout(remoteTimer);remoteTimer=setTimeout(()=>downloadCloud(true),700);
+}
+async function connectCloud(auto=false){
+ const url=($('supabaseUrl')?.value||'').trim().replace(/\/+$/,''),key=($('supabaseKey')?.value||'').trim();
+ if(!url||!key){if(!auto)alert('請先輸入 Supabase URL 與 Publishable Key');return;}
+ if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)){
+  if(!auto)alert('Project URL 格式不正確。請只貼 https://xxxx.supabase.co');
+  return;
+ }
+ if(!window.supabase?.createClient){
+  setCloudStatus('Supabase 程式載入失敗','error');
+  if(!auto)alert('Supabase 程式沒有載入，請確認電腦可以連上網路後重新開啟此檔案。');
+  return;
+ }
+ try{
+  cloudReady=false;
+  cloudClient=window.supabase.createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+  for(const table of CLOUD_TABLES){
+   const {error}=await cloudClient.from(table).select('*',{head:true,count:'exact'}).limit(1);
+   if(error){
+    const e=new Error(`${table}：${error.message}`);
+    e.code=error.code;e.details=error.details;e.hint=error.hint;
+    throw e;
+   }
+  }
+  localStorage.setItem('manpowerV2CloudConfig',JSON.stringify({url,key}));
+  cloudReady=true;setCloudStatus('已連線','online');
+  for(const ch of cloudChannels)await cloudClient.removeChannel(ch);cloudChannels=[];
+  for(const table of CLOUD_TABLES){
+   const ch=cloudClient.channel('live-'+table).on('postgres_changes',{event:'*',schema:'public',table},scheduleRemoteDownload).subscribe();
+   cloudChannels.push(ch);
+  }
+  if(!auto)showToast('雲端連線成功');
+ }catch(err){
+  cloudReady=false;
+  const extra=[err.code,err.hint,err.details].filter(Boolean).join('｜');
+  const message=err.message+(extra?`（${extra}）`:``);
+  setCloudStatus('連線失敗：'+message,'error');
+  if(!auto)alert('連線失敗：'+message+'\n\n若顯示 permission denied，請執行隨附的權限修復 SQL。');
+ }
+}
+async function disconnectCloud(){
+ if(cloudClient)for(const ch of cloudChannels)await cloudClient.removeChannel(ch);
+ cloudClient=null;cloudChannels=[];cloudReady=false;localStorage.removeItem('manpowerV2CloudConfig');
+ setCloudStatus('尚未連線');showToast('已中斷雲端');
+}
+function initCloudUI(){
+ const cfg=cloudConfig();if($('supabaseUrl'))$('supabaseUrl').value=cfg.url||'';if($('supabaseKey'))$('supabaseKey').value=cfg.key||'';
+ $('connectCloud').onclick=()=>connectCloud(false);$('disconnectCloud').onclick=disconnectCloud;
+ $('uploadCloud').onclick=()=>uploadCloud(false);$('downloadCloud').onclick=()=>downloadCloud(false);
+ if(cfg.url&&cfg.key)connectCloud(true);
+}
+
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');if(b.dataset.tab==='settings')renderSettings();if(b.dataset.tab==='records')renderRecords()});
 $('calculate').onclick=calc;
-$('langSwitch').onclick=()=>{lang=lang==='zh'?'vi':'zh';localStorage.setItem('manpowerV1Lang',lang);applyLanguage();showToast(tr('saved'))};
+$('queryDate').onchange=()=>{lastResult=null;$('result').classList.remove('show');renderCalc();};
+$('langSwitch').onclick=()=>{lang=lang==='zh'?'vi':'zh';localStorage.setItem('manpowerV1Lang',lang);scheduleCloudUpload();applyLanguage();showToast(tr('saved'))};
 $('employeeList').onchange=()=>{
  const temp=[...document.querySelectorAll('#employeeList input:checked:not(:disabled)')].map(x=>x.dataset.name);
  saveTempAbsence(temp);renderCalc();
 };
 $('clearAbsence').onclick=()=>{saveTempAbsence([]);renderCalc();showToast(tr('cleared'))};
-$('addLeave').onclick=()=>{const arr=loadLeaves();arr.push({name:data.employees[0]||'',start:todayISO(),end:todayISO()});saveLeaves(arr);renderCalc();showToast(tr('added'))};
+$('addLeave').onclick=()=>{const arr=loadLeaves();arr.push({name:data.employees[0]||'',start:selectedDate(),end:selectedDate()});saveLeaves(arr);renderCalc();showToast(tr('added'))};
 $('leaveSettings').onchange=()=>{
   saveLeaveInputs();
   showToast(tr('saved'));
 };
-$('leaveSettings').onclick=e=>{if(e.target.dataset.delleave!==undefined){const arr=loadLeaves();arr.splice(Number(e.target.dataset.delleave),1);saveLeaves(arr);renderCalc();showToast(tr('deleted'))}};
 
-$('saveRecord').onclick=()=>{if(!lastResult)return;const arr=JSON.parse(localStorage.getItem('manpowerV1Records')||'[]');arr.unshift(lastResult);localStorage.setItem('manpowerV1Records',JSON.stringify(arr.slice(0,365)));showToast(tr('saved'));};
-$('addProduct').onclick=()=>{data.products.push({id:'p'+Date.now(),name:tr('newProduct'),base:0,screwAdd:0});persist();renderSettings();renderCalc();showToast(tr('added'))};
-$('productSettings').onclick=e=>{if(e.target.dataset.delproduct!==undefined){data.products.splice(Number(e.target.dataset.delproduct),1);persist();renderSettings();renderCalc();showToast(tr('deleted'))}};
-$('saveRules').onclick=()=>{document.querySelectorAll('[data-pname]').forEach(x=>{let i=+x.dataset.pname;data.products[i].name=x.value.trim()||tr('unnamed')});document.querySelectorAll('[data-pbase]').forEach(x=>data.products[+x.dataset.pbase].base=Math.max(0,+x.value||0));document.querySelectorAll('[data-pscrew]').forEach(x=>data.products[+x.dataset.pscrew].screwAdd=Math.max(0,+x.value||0));data.rules.wash2Add=Math.max(0,+$('wash2Add').value||0);data.rules.jubaoAdd=Math.max(0,+$('jubaoAdd').value||0);persist();renderCalc();showToast(tr('saved'))};
-$('addEmployee').onclick=()=>{data.employees.push(tr('newEmployee'));persist();renderSettings();renderCalc();showToast(tr('added'))};
-$('employeeSettings').onclick=e=>{if(e.target.dataset.delemp!==undefined){data.employees.splice(Number(e.target.dataset.delemp),1);persist();renderSettings();renderCalc();showToast(tr('deleted'))}};
-$('saveEmployees').onclick=()=>{data.employees=[...document.querySelectorAll('[data-ename]')].map(x=>x.value.trim()).filter(Boolean);persist();renderCalc();showToast(tr('saved'))};
-$('clearRecords').onclick=()=>{if(confirm(tr('confirmClear'))){localStorage.removeItem('manpowerV1Records');renderRecords();showToast(tr('cleared'))}};
+$('saveRecord').onclick=()=>{if(!lastResult)return;const arr=JSON.parse(localStorage.getItem('manpowerV1Records')||'[]');arr.unshift(lastResult);localStorage.setItem('manpowerV1Records',JSON.stringify(arr.slice(0,365)));scheduleCloudUpload();showToast(tr('saved'));};
+$('addProduct').onclick=()=>{syncProductInputs();data.products.push({id:'p'+Date.now(),name:tr('newProduct'),base:0,screwAdd:0});persist();renderSettings();renderCalc();showToast(tr('added'))};
+$('saveRules').onclick=()=>{syncProductInputs();data.rules.wash2Add=Math.max(0,+$('wash2Add').value||0);data.rules.jubaoAdd=Math.max(0,+$('jubaoAdd').value||0);persist();renderSettings();renderCalc();showToast(tr('saved'))};
+$('addEmployee').onclick=()=>{syncEmployeeInputs();data.employees.push(tr('newEmployee'));persist();renderSettings();renderCalc();showToast(tr('added'))};
+$('saveEmployees').onclick=()=>{syncEmployeeInputs();persist();renderSettings();renderCalc();showToast(tr('saved'))};
+$('clearRecords').onclick=()=>{if(confirm(tr('confirmClear'))){localStorage.removeItem('manpowerV1Records');scheduleCloudUpload();renderRecords();showToast(tr('cleared'))}};
+$('queryDate').value=todayISO();
 applyLanguage();
+initCloudUI();
 </script>
 </body>
 </html>
