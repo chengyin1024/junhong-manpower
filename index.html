@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#111827" />
-  <title>人力計算系統 V2.0.1</title>
+  <title>人力計算系統 V2.1.1</title>
   <style>
     :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--warn:#b45309;--bad:#b91c1c}
     *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
@@ -91,10 +91,15 @@
     .toast.show{opacity:1;transform:translate(-50%,0)}
     .cloud-status{display:flex;align-items:center;gap:8px;font-weight:800;margin:10px 0}
     .cloud-dot{width:10px;height:10px;border-radius:50%;background:#9ca3af}
-    .cloud-dot.online{background:#16a34a}.cloud-dot.error{background:#dc2626}
+    .cloud-dot.online{background:#16a34a}.cloud-dot.syncing{background:#d97706;animation:pulse 1s infinite}.cloud-dot.error{background:#dc2626}
     .cloud-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .cloud-actions button{margin-top:0}
     .cloud-note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+    .cloud-summary{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+    .cloud-meta{font-size:12px;color:var(--muted);margin-top:5px}
+    details.cloud-admin{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+    details.cloud-admin summary{cursor:pointer;font-weight:700;color:var(--muted);font-size:13px}
+    @keyframes pulse{50%{opacity:.35}}
 
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -105,7 +110,7 @@
     <h1 data-i18n="appTitle">人力計算系統</h1>
     <div class="top-actions">
       <button id="langSwitch" class="lang-btn" type="button">VI</button>
-      <span class="tag">V2.0.1</span>
+      <span class="tag">V2.1.1</span>
     </div>
   </div>
   <div class="tabs">
@@ -161,25 +166,31 @@
   </section>
 
   <section id="settings" class="panel">
-    <div class="notice">V2.0 支援 Supabase 雲端同步；未連線時仍可使用本機資料。</div>
     <div class="card">
-      <h2>雲端同步設定</h2>
-      <label>Supabase Project URL</label><input id="supabaseUrl" type="text" placeholder="https://xxxx.supabase.co">
-      <label>Supabase Publishable／Anon Key</label><input id="supabaseKey" type="text" placeholder="貼上 publishable key 或 anon key">
-      <div class="cloud-status"><span id="cloudDot" class="cloud-dot"></span><span id="cloudStatus">尚未連線</span></div>
-      <div class="cloud-actions">
-        <button id="connectCloud" class="secondary" type="button">連線雲端</button>
-        <button id="disconnectCloud" class="secondary" type="button">中斷連線</button>
-        <button id="uploadCloud" class="secondary" type="button">上傳本機資料</button>
-        <button id="downloadCloud" class="secondary" type="button">下載雲端資料</button>
+      <div class="cloud-summary">
+        <div>
+          <h2 style="margin-bottom:6px">雲端同步</h2>
+          <div class="cloud-status" style="margin:0"><span id="cloudDot" class="cloud-dot"></span><span id="cloudStatus">正在連線…</span></div>
+          <div id="lastSyncTime" class="cloud-meta">最後同步：尚未同步</div>
+        </div>
+        <span class="tag">自動</span>
       </div>
-      <div class="cloud-note">連線後，新增、修改、刪除、請假與每日紀錄會自動同步。第一次使用請先在 Supabase 執行隨附的 SQL。</div>
+      <div class="cloud-note">系統開啟後會自動連線；網路中斷時仍可操作，恢復後會自動重新連線與同步。</div>
+      <details class="cloud-admin">
+        <summary>管理員雲端工具</summary>
+        <div class="cloud-actions" style="margin-top:10px">
+          <button id="reconnectCloud" class="secondary" type="button">重新連線</button>
+          <button id="uploadCloud" class="secondary" type="button">上傳本機資料</button>
+          <button id="downloadCloud" class="secondary" type="button">下載雲端資料</button>
+        </div>
+      </details>
     </div>
     <div class="card">
       <h2 data-i18n="productSettings">產品需求設定</h2>
       <div class="hint" data-i18n="productHint">基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。</div>
       <div id="productSettings"></div>
       <button id="addProduct" class="secondary" data-i18n="addProduct">新增產品</button>
+      <button id="saveProducts" class="primary" data-i18n="saveProducts">儲存產品設定</button>
     </div>
     <div class="card">
       <h2 data-i18n="specialRules">特殊規則</h2>
@@ -288,7 +299,7 @@ const translations={
     calculate:'開始計算',resultTitle:'計算結果',studentsNeeded:'還需要學生',todayNeed:'今日需求',formalTotal:'正式員工總數',
     leaveCount:'請假',formalPresent:'正式員工實到',conditions:'計算條件',saveToday:'儲存所選日期人力',
     storageNotice:'所有設定會儲存在這台裝置的瀏覽器中。',productSettings:'產品需求設定',
-    productHint:'基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。',addProduct:'新增產品',
+    productHint:'基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。',addProduct:'新增產品',saveProducts:'儲存產品設定',productSaved:'產品設定已儲存成功！',
     specialRules:'特殊規則',washTwoAdd:'洗2個增加人數',jubaoAdd:'巨堡印刷增加人數',saveRules:'儲存規則',
     employeeListTitle:'正式員工名單',addEmployee:'新增員工',saveEmployees:'儲存員工名單',
     clearRecords:'清除全部紀錄',emptyLeave:'尚未設定區間請假',rangeTag:'（區間請假）',
@@ -308,7 +319,7 @@ const translations={
     calculate:'Bắt đầu tính',resultTitle:'Kết quả tính',studentsNeeded:'Số sinh viên cần thêm',todayNeed:'Nhu cầu hôm nay',formalTotal:'Tổng nhân viên chính thức',
     leaveCount:'Nghỉ',formalPresent:'Nhân viên chính thức có mặt',conditions:'Điều kiện tính',saveToday:'Lưu nhân lực ngày đã chọn',
     storageNotice:'Mọi cài đặt được lưu trong trình duyệt của thiết bị này.',productSettings:'Cài đặt nhu cầu sản phẩm',
-    productHint:'Nhu cầu cơ bản lấy mốc: rửa 1 bộ, không Jubao, không tháo vít.',addProduct:'Thêm sản phẩm',
+    productHint:'Nhu cầu cơ bản lấy mốc: rửa 1 bộ, không Jubao, không tháo vít.',addProduct:'Thêm sản phẩm',saveProducts:'Lưu cài đặt sản phẩm',productSaved:'Đã lưu cài đặt sản phẩm thành công!',
     specialRules:'Quy tắc đặc biệt',washTwoAdd:'Số người tăng khi rửa 2 bộ',jubaoAdd:'Số người tăng khi in Jubao',saveRules:'Lưu quy tắc',
     employeeListTitle:'Danh sách nhân viên chính thức',addEmployee:'Thêm nhân viên',saveEmployees:'Lưu danh sách nhân viên',
     clearRecords:'Xóa toàn bộ lịch sử',emptyLeave:'Chưa cài đặt nghỉ theo khoảng ngày',rangeTag:'（nghỉ theo khoảng ngày）',
@@ -472,15 +483,28 @@ function calc(){
 }
 
 // ===== V2.0 Supabase cloud sync（正式資料表版） =====
-let cloudClient=null, cloudChannels=[], cloudReady=false, applyingRemote=false, cloudTimer=null, remoteTimer=null;
+let cloudClient=null, cloudChannels=[], cloudReady=false, applyingRemote=false, cloudTimer=null, remoteTimer=null, reconnectTimer=null;
+const BUILTIN_SUPABASE_URL='https://wzhtuulpnbkgbruhzmuo.supabase.co';
+const BUILTIN_SUPABASE_KEY='sb_publishable_ZG06eALOJ44uC6fNdXWHog_a3dBfzU-';
 const CLOUD_TABLES=[
  'manpower_settings','manpower_products','manpower_employees',
  'manpower_leave_records','manpower_temp_absences','manpower_daily_records'
 ];
-function cloudConfig(){return JSON.parse(localStorage.getItem('manpowerV2CloudConfig')||'{}')}
+function cloudConfig(){return {url:BUILTIN_SUPABASE_URL,key:BUILTIN_SUPABASE_KEY}}
 function setCloudStatus(text,state=''){
  const el=$('cloudStatus'),dot=$('cloudDot'); if(!el||!dot)return;
  el.textContent=text;dot.className='cloud-dot'+(state?' '+state:'');
+}
+function markSynced(){
+ const now=new Date();
+ localStorage.setItem('manpowerV2LastSync',now.toISOString());
+ const el=$('lastSyncTime');
+ if(el)el.textContent='最後同步：'+now.toLocaleString('zh-TW',{hour12:false});
+}
+function showLastSync(){
+ const el=$('lastSyncTime');if(!el)return;
+ const value=localStorage.getItem('manpowerV2LastSync');
+ el.textContent=value?'最後同步：'+new Date(value).toLocaleString('zh-TW',{hour12:false}):'最後同步：尚未同步';
 }
 function normalizeRecord(r){
  return {
@@ -525,7 +549,7 @@ async function uploadCloud(silent=false){
    await replaceTable('manpower_temp_absences',temp);
    await replaceTable('manpower_daily_records',records);
   } finally {applyingRemote=false;}
-  setCloudStatus('已連線・資料已同步','online');if(!silent)showToast('已上傳雲端');
+  setCloudStatus('雲端同步正常','online');markSynced();if(!silent)showToast('已上傳雲端');
  }catch(err){applyingRemote=false;setCloudStatus('同步失敗：'+err.message,'error');if(!silent)alert('上傳失敗：'+err.message)}
 }
 async function downloadCloud(silent=false){
@@ -554,7 +578,7 @@ async function downloadCloud(silent=false){
    localStorage.setItem('manpowerV1Records',JSON.stringify((recordsR.data||[]).map(x=>normalizeRecord(x))));
    migrateStoredData();applyLanguage();renderCalc();renderSettings();renderRecords();
   } finally {applyingRemote=false;}
-  setCloudStatus('已連線・已取得最新資料','online');if(!silent)showToast('已下載雲端資料');return true;
+  setCloudStatus('雲端同步正常','online');markSynced();if(!silent)showToast('已下載雲端資料');return true;
  }catch(err){applyingRemote=false;setCloudStatus('下載失敗：'+err.message,'error');if(!silent)alert('下載失敗：'+err.message);return false;}
 }
 function scheduleCloudUpload(){
@@ -566,7 +590,7 @@ function scheduleRemoteDownload(){
  clearTimeout(remoteTimer);remoteTimer=setTimeout(()=>downloadCloud(true),700);
 }
 async function connectCloud(auto=false){
- const url=($('supabaseUrl')?.value||'').trim().replace(/\/+$/,''),key=($('supabaseKey')?.value||'').trim();
+ const cfg=cloudConfig(),url=cfg.url.trim().replace(/\/+$/,''),key=cfg.key.trim();
  if(!url||!key){if(!auto)alert('請先輸入 Supabase URL 與 Publishable Key');return;}
  if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)){
   if(!auto)alert('Project URL 格式不正確。請只貼 https://xxxx.supabase.co');
@@ -578,7 +602,7 @@ async function connectCloud(auto=false){
   return;
  }
  try{
-  cloudReady=false;
+  cloudReady=false;setCloudStatus('正在連線…','syncing');
   cloudClient=window.supabase.createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
   for(const table of CLOUD_TABLES){
    const {error}=await cloudClient.from(table).select('*',{head:true,count:'exact'}).limit(1);
@@ -588,32 +612,44 @@ async function connectCloud(auto=false){
     throw e;
    }
   }
-  localStorage.setItem('manpowerV2CloudConfig',JSON.stringify({url,key}));
-  cloudReady=true;setCloudStatus('已連線','online');
+  cloudReady=true;setCloudStatus('已連線，正在取得資料…','syncing');
   for(const ch of cloudChannels)await cloudClient.removeChannel(ch);cloudChannels=[];
   for(const table of CLOUD_TABLES){
    const ch=cloudClient.channel('live-'+table).on('postgres_changes',{event:'*',schema:'public',table},scheduleRemoteDownload).subscribe();
    cloudChannels.push(ch);
   }
+  const gotCloudData=await downloadCloud(true);
+  if(!gotCloudData){setCloudStatus('雲端同步正常','online');}
   if(!auto)showToast('雲端連線成功');
  }catch(err){
   cloudReady=false;
   const extra=[err.code,err.hint,err.details].filter(Boolean).join('｜');
   const message=err.message+(extra?`（${extra}）`:``);
   setCloudStatus('連線失敗：'+message,'error');
-  if(!auto)alert('連線失敗：'+message+'\n\n若顯示 permission denied，請執行隨附的權限修復 SQL。');
+  scheduleReconnect();if(!auto)alert('連線失敗：'+message+'\n\n若顯示 permission denied，請執行隨附的權限修復 SQL。');
  }
 }
-async function disconnectCloud(){
+async function resetCloudConnection(){
+ cloudReady=false;
  if(cloudClient)for(const ch of cloudChannels)await cloudClient.removeChannel(ch);
- cloudClient=null;cloudChannels=[];cloudReady=false;localStorage.removeItem('manpowerV2CloudConfig');
- setCloudStatus('尚未連線');showToast('已中斷雲端');
+ cloudClient=null;cloudChannels=[];
+ return connectCloud(true);
+}
+function scheduleReconnect(delay=5000){
+ clearTimeout(reconnectTimer);
+ if(cloudReady||!navigator.onLine)return;
+ reconnectTimer=setTimeout(()=>connectCloud(true),delay);
 }
 function initCloudUI(){
- const cfg=cloudConfig();if($('supabaseUrl'))$('supabaseUrl').value=cfg.url||'';if($('supabaseKey'))$('supabaseKey').value=cfg.key||'';
- $('connectCloud').onclick=()=>connectCloud(false);$('disconnectCloud').onclick=disconnectCloud;
- $('uploadCloud').onclick=()=>uploadCloud(false);$('downloadCloud').onclick=()=>downloadCloud(false);
- if(cfg.url&&cfg.key)connectCloud(true);
+ showLastSync();
+ $('reconnectCloud').onclick=()=>resetCloudConnection();
+ $('uploadCloud').onclick=()=>uploadCloud(false);
+ $('downloadCloud').onclick=()=>downloadCloud(false);
+ window.addEventListener('online',()=>{setCloudStatus('網路已恢復，正在重新連線…','syncing');resetCloudConnection();});
+ window.addEventListener('offline',()=>{cloudReady=false;setCloudStatus('目前離線，資料暫存於此裝置','error');});
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!cloudReady&&navigator.onLine)resetCloudConnection();});
+ setInterval(()=>{if(!cloudReady&&navigator.onLine)connectCloud(true)},15000);
+ connectCloud(true);
 }
 
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');if(b.dataset.tab==='settings')renderSettings();if(b.dataset.tab==='records')renderRecords()});
@@ -632,7 +668,19 @@ $('leaveSettings').onchange=()=>{
 };
 
 $('saveRecord').onclick=()=>{if(!lastResult)return;const arr=JSON.parse(localStorage.getItem('manpowerV1Records')||'[]');arr.unshift(lastResult);localStorage.setItem('manpowerV1Records',JSON.stringify(arr.slice(0,365)));scheduleCloudUpload();showToast(tr('saved'));};
-$('addProduct').onclick=()=>{syncProductInputs();data.products.push({id:'p'+Date.now(),name:tr('newProduct'),base:0,screwAdd:0});persist();renderSettings();renderCalc();showToast(tr('added'))};
+$('addProduct').onclick=()=>{
+ syncProductInputs();
+ data.products.push({id:'p'+Date.now(),name:tr('newProduct'),base:0,screwAdd:0});
+ renderSettings();
+ showToast(tr('added'));
+};
+$('saveProducts').onclick=()=>{
+ syncProductInputs();
+ persist();
+ renderSettings();
+ renderCalc();
+ showToast(tr('productSaved'));
+};
 $('saveRules').onclick=()=>{syncProductInputs();data.rules.wash2Add=Math.max(0,+$('wash2Add').value||0);data.rules.jubaoAdd=Math.max(0,+$('jubaoAdd').value||0);persist();renderSettings();renderCalc();showToast(tr('saved'))};
 $('addEmployee').onclick=()=>{syncEmployeeInputs();data.employees.push(tr('newEmployee'));persist();renderSettings();renderCalc();showToast(tr('added'))};
 $('saveEmployees').onclick=()=>{syncEmployeeInputs();persist();renderSettings();renderCalc();showToast(tr('saved'))};
