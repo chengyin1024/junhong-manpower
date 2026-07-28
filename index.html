@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#111827" />
-  <title>人力計算系統 V2.1.1</title>
+  <title>人力計算系統 V2.1.2</title>
   <style>
     :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--warn:#b45309;--bad:#b91c1c}
     *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
@@ -110,7 +110,7 @@
     <h1 data-i18n="appTitle">人力計算系統</h1>
     <div class="top-actions">
       <button id="langSwitch" class="lang-btn" type="button">VI</button>
-      <span class="tag">V2.1.1</span>
+      <span class="tag">V2.1.2</span>
     </div>
   </div>
   <div class="tabs">
@@ -281,7 +281,67 @@ function saveTempAbsence(names,date=selectedDate()){
  const all=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
  all[date]=[...new Set(names)];
  localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(all));
- scheduleCloudUpload();
+}
+const TEMP_OPS_KEY='manpowerV3PendingTempOps';
+function loadPendingTempOps(){
+ try{return JSON.parse(localStorage.getItem(TEMP_OPS_KEY)||'[]')}catch{return []}
+}
+function savePendingTempOps(ops){
+ localStorage.setItem(TEMP_OPS_KEY,JSON.stringify(ops));
+}
+function queueTempAbsenceOp(date,name,absent){
+ const ops=loadPendingTempOps().filter(x=>!(x.date===date&&x.name===name));
+ ops.push({date,name,absent:!!absent,ts:Date.now()});
+ savePendingTempOps(ops);
+ processPendingTempOps();
+}
+let processingTempOps=false;
+async function processPendingTempOps(){
+ if(processingTempOps||!cloudReady||!cloudClient||applyingRemote)return;
+ const ops=loadPendingTempOps();
+ if(!ops.length)return;
+ processingTempOps=true;
+ try{
+  for(const op of ops){
+   const del=await cloudClient.from('manpower_temp_absences')
+    .delete().eq('absence_date',op.date).eq('employee_name',op.name);
+   if(del.error)throw del.error;
+   if(op.absent){
+    const ins=await cloudClient.from('manpower_temp_absences')
+     .insert({absence_date:op.date,employee_name:op.name});
+    if(ins.error)throw ins.error;
+   }
+   const latest=loadPendingTempOps();
+   savePendingTempOps(latest.filter(x=>!(x.date===op.date&&x.name===op.name&&x.ts===op.ts)));
+  }
+  setCloudStatus('雲端同步正常','online');markSynced();
+ }catch(err){
+  setCloudStatus('臨時請假待同步：'+err.message,'error');
+ }finally{
+  processingTempOps=false;
+ }
+}
+let tempRefreshTimer=null;
+function scheduleTempCloudRefresh(){
+ if(!cloudReady||applyingRemote)return;
+ clearTimeout(tempRefreshTimer);
+ tempRefreshTimer=setTimeout(refreshTempAbsencesFromCloud,500);
+}
+async function refreshTempAbsencesFromCloud(){
+ if(!cloudReady||!cloudClient||applyingRemote)return;
+ try{
+  const {data:rows,error}=await cloudClient.from('manpower_temp_absences')
+   .select('absence_date,employee_name').order('absence_date');
+  if(error)throw error;
+  const byDate={};
+  (rows||[]).forEach(x=>{(byDate[x.absence_date]??=[]).push(x.employee_name)});
+  Object.keys(byDate).forEach(d=>byDate[d]=[...new Set(byDate[d])]);
+  localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(byDate));
+  renderEmployeeListOnly();
+  markSynced();
+ }catch(err){
+  setCloudStatus('同步失敗：'+err.message,'error');
+ }
 }
 function loadLeaves(){return JSON.parse(localStorage.getItem('manpowerV1Leaves')||'[]')}
 function saveLeaves(v){localStorage.setItem('manpowerV1Leaves',JSON.stringify(v));scheduleCloudUpload()}
@@ -340,7 +400,7 @@ function applyLanguage(){
   document.documentElement.lang=lang==='vi'?'vi':'zh-Hant';
   document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=tr(el.dataset.i18n)});
   $('langSwitch').textContent=lang==='zh'?'VI':'中文';
-  document.title=`${tr('appTitle')} V2.0.1`;
+  document.title=`${tr('appTitle')} V2.1.2`;
   renderCalc();
   const active=document.querySelector('.tab.active')?.dataset.tab;
   if(active==='settings')renderSettings();
@@ -360,17 +420,21 @@ function showToast(message){
   toastTimer=setTimeout(()=>toast.classList.remove('show'),1600);
 }
 
+function renderEmployeeListOnly(){
+ const list=$('employeeList');if(!list)return;
+ const temp=loadTempAbsence(), range=activeLeaveNames();
+ list.innerHTML=data.employees.map((n,i)=>{
+   const checked=temp.includes(n)||range.includes(n);
+   const locked=range.includes(n);
+   return `<label class="emp ${checked?'absent':''}"><input type="checkbox" value="${i}" data-name="${esc(n)}" ${checked?'checked':''} ${locked?'disabled':''}><span>${esc(n)}${locked?tr('rangeTag'):''}</span></label>`;
+ }).join('');
+}
 function renderCalc(){
  const currentProduct=$('product')?.value;
  if(!$('queryDate').value)$('queryDate').value=todayISO();
  $('product').innerHTML=data.products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
  if(currentProduct&&data.products.some(p=>p.id===currentProduct))$('product').value=currentProduct;
- const temp=loadTempAbsence(), range=activeLeaveNames();
- $('employeeList').innerHTML=data.employees.map((n,i)=>{
-   const checked=temp.includes(n)||range.includes(n);
-   const locked=range.includes(n);
-   return `<label class="emp ${checked?'absent':''}"><input type="checkbox" value="${i}" data-name="${esc(n)}" ${checked?'checked':''} ${locked?'disabled':''}><span>${esc(n)}${locked?tr('rangeTag'):''}</span></label>`;
- }).join('');
+ renderEmployeeListOnly();
  renderLeaves();
 }
 function renderLeaves(){
@@ -535,8 +599,6 @@ async function uploadCloud(silent=false){
   const products=(data.products||[]).map((p,i)=>({id:String(p.id),name:p.name,base_people:Number(p.base)||0,screw_add:Number(p.screwAdd)||0,sort_order:i,updated_at:now}));
   const employees=(data.employees||[]).map((name,i)=>({name,sort_order:i,updated_at:now}));
   const leaves=loadLeaves().map(x=>({employee_name:x.name,start_date:x.start,end_date:x.end,updated_at:now}));
-  const byDate=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
-  const temp=[];Object.entries(byDate).forEach(([date,names])=>(names||[]).forEach(name=>temp.push({absence_date:date,employee_name:name})));
   const records=(JSON.parse(localStorage.getItem('manpowerV1Records')||'[]')).map(r=>{
    r=normalizeRecord(r);return {record_date:r.date,product:r.product,need:r.need,formal_total:r.formalTotal,absent:r.absent,formal_present:r.formalPresent,total_present:r.totalPresent,missing:r.missing,wash:r.wash,jubao:r.jubao,screw:r.screw};
   });
@@ -546,7 +608,6 @@ async function uploadCloud(silent=false){
    await replaceTable('manpower_products',products);
    await replaceTable('manpower_employees',employees);
    await replaceTable('manpower_leave_records',leaves);
-   await replaceTable('manpower_temp_absences',temp);
    await replaceTable('manpower_daily_records',records);
   } finally {applyingRemote=false;}
   setCloudStatus('雲端同步正常','online');markSynced();if(!silent)showToast('已上傳雲端');
@@ -615,9 +676,11 @@ async function connectCloud(auto=false){
   cloudReady=true;setCloudStatus('已連線，正在取得資料…','syncing');
   for(const ch of cloudChannels)await cloudClient.removeChannel(ch);cloudChannels=[];
   for(const table of CLOUD_TABLES){
-   const ch=cloudClient.channel('live-'+table).on('postgres_changes',{event:'*',schema:'public',table},scheduleRemoteDownload).subscribe();
+   const handler=table==='manpower_temp_absences'?scheduleTempCloudRefresh:scheduleRemoteDownload;
+   const ch=cloudClient.channel('live-'+table).on('postgres_changes',{event:'*',schema:'public',table},handler).subscribe();
    cloudChannels.push(ch);
   }
+  await processPendingTempOps();
   const gotCloudData=await downloadCloud(true);
   if(!gotCloudData){setCloudStatus('雲端同步正常','online');}
   if(!auto)showToast('雲端連線成功');
@@ -648,7 +711,7 @@ function initCloudUI(){
  window.addEventListener('online',()=>{setCloudStatus('網路已恢復，正在重新連線…','syncing');resetCloudConnection();});
  window.addEventListener('offline',()=>{cloudReady=false;setCloudStatus('目前離線，資料暫存於此裝置','error');});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!cloudReady&&navigator.onLine)resetCloudConnection();});
- setInterval(()=>{if(!cloudReady&&navigator.onLine)connectCloud(true)},15000);
+ setInterval(()=>{if(!cloudReady&&navigator.onLine)connectCloud(true);else if(cloudReady)processPendingTempOps()},15000);
  connectCloud(true);
 }
 
@@ -656,11 +719,23 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelect
 $('calculate').onclick=calc;
 $('queryDate').onchange=()=>{lastResult=null;$('result').classList.remove('show');renderCalc();};
 $('langSwitch').onclick=()=>{lang=lang==='zh'?'vi':'zh';localStorage.setItem('manpowerV1Lang',lang);scheduleCloudUpload();applyLanguage();showToast(tr('saved'))};
-$('employeeList').onchange=()=>{
+$('employeeList').onchange=e=>{
+ const input=e.target.closest('input[type=checkbox]');
+ if(!input||input.disabled)return;
+ const date=selectedDate(),name=input.dataset.name;
  const temp=[...document.querySelectorAll('#employeeList input:checked:not(:disabled)')].map(x=>x.dataset.name);
- saveTempAbsence(temp);renderCalc();
+ saveTempAbsence(temp,date);
+ input.closest('.emp')?.classList.toggle('absent',input.checked);
+ queueTempAbsenceOp(date,name,input.checked);
+ showToast(tr('saved'));
 };
-$('clearAbsence').onclick=()=>{saveTempAbsence([]);renderCalc();showToast(tr('cleared'))};
+$('clearAbsence').onclick=()=>{
+ const date=selectedDate(),names=loadTempAbsence(date);
+ saveTempAbsence([],date);
+ names.forEach(name=>queueTempAbsenceOp(date,name,false));
+ renderEmployeeListOnly();
+ showToast(tr('cleared'));
+};
 $('addLeave').onclick=()=>{const arr=loadLeaves();arr.push({name:data.employees[0]||'',start:selectedDate(),end:selectedDate()});saveLeaves(arr);renderCalc();showToast(tr('added'))};
 $('leaveSettings').onchange=()=>{
   saveLeaveInputs();
