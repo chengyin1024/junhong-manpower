@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#111827" />
-  <title>人力計算系統 V2.1.2</title>
+  <title>人力計算系統 V2.1.4</title>
   <style>
     :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--warn:#b45309;--bad:#b91c1c}
     *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
@@ -15,7 +15,7 @@
     select,input[type=number],input[type=text],input[type=date]{width:100%;padding:13px 12px;border:1px solid #d1d5db;border-radius:12px;font-size:16px;background:#fff}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.choice{display:flex;gap:8px}.choice label{flex:1;margin:0}.choice input{display:none}.choice span{display:block;border:1px solid #d1d5db;border-radius:12px;padding:12px;text-align:center;font-weight:700}.choice input:checked+span{background:#111827;color:#fff;border-color:#111827}
     .check{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;margin-top:8px}.check input{width:20px;height:20px}
-    .employee-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.emp.absent{background:#fef2f2;border-color:#fecaca;color:#991b1b}.leave-row{display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:7px;align-items:center;margin:8px 0}.leave-row input,.leave-row select{padding:9px;font-size:14px}.emp{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px}.emp input{width:18px;height:18px}
+    .employee-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.emp.absent{background:#fef2f2;border-color:#fecaca;color:#991b1b}.leave-row{display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:7px;align-items:center;margin:8px 0}.leave-row input,.leave-row select{padding:9px;font-size:14px}.emp{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px}.emp input{width:18px;height:18px}.emp-name{font-weight:700}.emp-status{width:auto;min-width:104px;padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:#fff}.emp.half-am{background:#fffbeb;border-color:#fde68a;color:#92400e}.emp.half-pm{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
     button.primary{width:100%;border:0;border-radius:14px;background:#111827;color:#fff;padding:15px;font-size:17px;font-weight:800;margin-top:12px}.secondary{border:1px solid #d1d5db;background:#fff;border-radius:10px;padding:9px 12px;font-weight:700}.danger{border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:9px;padding:7px 9px}
     .result{display:none}.result.show{display:block}.big{font-size:42px;font-weight:900;text-align:center;margin:4px 0}.status{text-align:center;font-weight:800;margin-bottom:15px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat{border:1px solid var(--line);border-radius:12px;padding:12px}.stat small{color:var(--muted);display:block}.stat strong{font-size:22px}.full{grid-column:1/-1}
     .settings-row{display:grid;grid-template-columns:1fr 90px 78px 36px;gap:7px;align-items:center;margin:8px 0}.settings-row.employee{grid-template-columns:1fr 92px 36px}.settings-row input,.settings-row select{padding:9px;font-size:14px}
@@ -110,7 +110,7 @@
     <h1 data-i18n="appTitle">人力計算系統</h1>
     <div class="top-actions">
       <button id="langSwitch" class="lang-btn" type="button">VI</button>
-      <span class="tag">V2.1.2</span>
+      <span class="tag">V2.1.4</span>
     </div>
   </div>
   <div class="tabs">
@@ -137,6 +137,16 @@
     <div class="card">
       <h2 data-i18n="tempLeave">臨時請假</h2>
       <div class="hint" data-i18n="tempLeaveHint">每個日期分別儲存。紅色代表所選日期請假。</div>
+      <div id="manualSyncBar" style="margin-top:10px;padding:10px;border:1px solid #d9e2ef;border-radius:10px;background:#f8fafc">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <strong id="manualSaveStatus">🟢 已同步</strong>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button id="manualUpload" class="primary" type="button" style="margin:0">同步到雲端</button>
+            <button id="manualDownload" class="secondary" type="button" style="margin:0">讀取最新資料</button>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:6px">勾選後會立即保存在這台裝置；按「同步到雲端」後，另一台再按「讀取最新資料」。</div>
+      </div>
       <div id="employeeList" class="employee-grid" style="margin-top:10px"></div>
       <button id="clearAbsence" class="secondary" style="margin-top:10px"><span data-i18n="clearTempLeave">清除所選日期臨時請假</span></button>
     </div>
@@ -173,9 +183,9 @@
           <div class="cloud-status" style="margin:0"><span id="cloudDot" class="cloud-dot"></span><span id="cloudStatus">正在連線…</span></div>
           <div id="lastSyncTime" class="cloud-meta">最後同步：尚未同步</div>
         </div>
-        <span class="tag">自動</span>
+        <span class="tag">手動</span>
       </div>
-      <div class="cloud-note">系統開啟後會自動連線；網路中斷時仍可操作，恢復後會自動重新連線與同步。</div>
+      <div class="cloud-note">系統開啟後會連線並讀取一次資料；之後不會自動刷新畫面。修改完成請按「同步到雲端」，查看端請按「下載雲端資料」。</div>
       <details class="cloud-admin">
         <summary>管理員雲端工具</summary>
         <div class="cloud-actions" style="margin-top:10px">
@@ -255,7 +265,26 @@ function migrateStoredData(){
  }
  const byDate=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
  let tempChanged=false;
- Object.keys(byDate).forEach(d=>{const names=(byDate[d]||[]).map(migrateName);if(JSON.stringify(names)!==JSON.stringify(byDate[d]))tempChanged=true;byDate[d]=[...new Set(names)]});
+ Object.keys(byDate).forEach(d=>{
+   const raw=byDate[d];
+   if(Array.isArray(raw)){
+     const statuses={};
+     raw.map(migrateName).forEach(name=>statuses[name]='full');
+     byDate[d]=statuses;
+     tempChanged=true;
+   }else if(raw&&typeof raw==='object'){
+     const statuses={};
+     Object.entries(raw).forEach(([name,type])=>{
+       const migrated=migrateName(name);
+       statuses[migrated]=['am','pm','full'].includes(type)?type:'full';
+       if(migrated!==name||statuses[migrated]!==type)tempChanged=true;
+     });
+     byDate[d]=statuses;
+   }else{
+     byDate[d]={};
+     tempChanged=true;
+   }
+ });
  if(tempChanged)localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(byDate));
  if(changed)localStorage.setItem('manpowerV1Data',JSON.stringify(data));
 }
@@ -273,14 +302,39 @@ migrateStoredData();
 let lastResult=null;
 function todayISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function selectedDate(){return $('queryDate')?.value||todayISO()}
+function normalizeTempLeaveType(type){
+ return ['am','pm','full'].includes(type)?type:'full';
+}
 function loadTempAbsence(date=selectedDate()){
  const all=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
- return Array.isArray(all[date])?all[date]:[];
+ const raw=all[date];
+ if(Array.isArray(raw)){
+   const statuses={};
+   raw.forEach(name=>statuses[name]='full');
+   all[date]=statuses;
+   localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(all));
+   return statuses;
+ }
+ return raw&&typeof raw==='object'?raw:{};
 }
-function saveTempAbsence(names,date=selectedDate()){
+function saveTempAbsence(statuses,date=selectedDate()){
  const all=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
- all[date]=[...new Set(names)];
+ const clean={};
+ Object.entries(statuses||{}).forEach(([name,type])=>{
+   if(name&&['am','pm','full'].includes(type))clean[name]=type;
+ });
+ all[date]=clean;
  localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(all));
+}
+function encodeTempEmployeeName(name,type){
+ return type&&type!=='full'?`${name}|||${type}`:name;
+}
+function decodeTempEmployeeName(value){
+ const s=String(value||'');
+ const pos=s.lastIndexOf('|||');
+ if(pos<0)return {name:s,type:'full'};
+ const type=s.slice(pos+3);
+ return ['am','pm','full'].includes(type)?{name:s.slice(0,pos),type}:{name:s,type:'full'};
 }
 const TEMP_OPS_KEY='manpowerV3PendingTempOps';
 function loadPendingTempOps(){
@@ -334,8 +388,7 @@ async function refreshTempAbsencesFromCloud(){
    .select('absence_date,employee_name').order('absence_date');
   if(error)throw error;
   const byDate={};
-  (rows||[]).forEach(x=>{(byDate[x.absence_date]??=[]).push(x.employee_name)});
-  Object.keys(byDate).forEach(d=>byDate[d]=[...new Set(byDate[d])]);
+  (rows||[]).forEach(x=>{const d=decodeTempEmployeeName(x.employee_name);(byDate[x.absence_date]??={})[d.name]=d.type});
   localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(byDate));
   renderEmployeeListOnly();
   markSynced();
@@ -354,7 +407,7 @@ const translations={
     appTitle:'人力計算系統',tabCalc:'人力計算',tabSettings:'設定',tabRecords:'每日紀錄',
     todayConditions:'生產條件',queryDate:'查詢日期',productSize:'產品尺寸',washMode:'洗料模式',washOne:'洗1個',washTwo:'洗2個',
     specialProcess:'特殊製程',jubaoPrint:'巨堡印刷（裝箱增加1人）',screwProcess:'鎖螺絲／拆螺絲',
-    tempLeave:'今日臨時請假',tempLeaveHint:'每個日期分別儲存。紅色代表所選日期請假。',clearTempLeave:'清除所選日期臨時請假',
+    tempLeave:'今日臨時請假',tempLeaveHint:'每個日期分別儲存，可選上午、下午或全天請假。',clearTempLeave:'清除所選日期臨時請假',normal:'正常',leaveAM:'上午請假',leavePM:'下午請假',leaveFull:'全天請假',morning:'上午',afternoon:'下午',
     rangeLeave:'日期區間請假',rangeLeaveHint:'設定期間後會每天自動計入請假；結束日隔天自動恢復到班。',addRangeLeave:'新增區間請假',
     calculate:'開始計算',resultTitle:'計算結果',studentsNeeded:'還需要學生',todayNeed:'今日需求',formalTotal:'正式員工總數',
     leaveCount:'請假',formalPresent:'正式員工實到',conditions:'計算條件',saveToday:'儲存所選日期人力',
@@ -374,7 +427,7 @@ const translations={
     appTitle:'Hệ thống tính nhân lực',tabCalc:'Tính nhân lực',tabSettings:'Cài đặt',tabRecords:'Lịch sử hằng ngày',
     todayConditions:'Điều kiện sản xuất',queryDate:'Ngày tra cứu',productSize:'Kích thước sản phẩm',washMode:'Chế độ rửa',washOne:'Rửa 1 bộ',washTwo:'Rửa 2 bộ',
     specialProcess:'Công đoạn đặc biệt',jubaoPrint:'In Jubao (tăng 1 người đóng thùng)',screwProcess:'Vặn vít / tháo vít',
-    tempLeave:'Nghỉ tạm thời',tempLeaveHint:'Mỗi ngày được lưu riêng. Màu đỏ là nghỉ vào ngày đã chọn.',clearTempLeave:'Xóa nghỉ tạm thời của ngày đã chọn',
+    tempLeave:'Nghỉ tạm thời',tempLeaveHint:'Mỗi ngày lưu riêng; có thể chọn nghỉ sáng, chiều hoặc cả ngày.',clearTempLeave:'Xóa nghỉ tạm thời của ngày đã chọn',normal:'Đi làm',leaveAM:'Nghỉ sáng',leavePM:'Nghỉ chiều',leaveFull:'Nghỉ cả ngày',morning:'Buổi sáng',afternoon:'Buổi chiều',
     rangeLeave:'Nghỉ theo khoảng ngày',rangeLeaveHint:'Sau khi cài đặt, hệ thống tự tính nghỉ mỗi ngày; ngày sau khi kết thúc sẽ tự đi làm lại.',addRangeLeave:'Thêm nghỉ theo khoảng ngày',
     calculate:'Bắt đầu tính',resultTitle:'Kết quả tính',studentsNeeded:'Số sinh viên cần thêm',todayNeed:'Nhu cầu hôm nay',formalTotal:'Tổng nhân viên chính thức',
     leaveCount:'Nghỉ',formalPresent:'Nhân viên chính thức có mặt',conditions:'Điều kiện tính',saveToday:'Lưu nhân lực ngày đã chọn',
@@ -400,7 +453,7 @@ function applyLanguage(){
   document.documentElement.lang=lang==='vi'?'vi':'zh-Hant';
   document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=tr(el.dataset.i18n)});
   $('langSwitch').textContent=lang==='zh'?'VI':'中文';
-  document.title=`${tr('appTitle')} V2.1.2`;
+  document.title=`${tr('appTitle')} V2.1.4`;
   renderCalc();
   const active=document.querySelector('.tab.active')?.dataset.tab;
   if(active==='settings')renderSettings();
@@ -420,13 +473,20 @@ function showToast(message){
   toastTimer=setTimeout(()=>toast.classList.remove('show'),1600);
 }
 
+function tempLeaveOptions(selected=''){
+ return `<option value="" ${!selected?'selected':''}>${tr('normal')}</option>
+ <option value="am" ${selected==='am'?'selected':''}>${tr('leaveAM')}</option>
+ <option value="pm" ${selected==='pm'?'selected':''}>${tr('leavePM')}</option>
+ <option value="full" ${selected==='full'?'selected':''}>${tr('leaveFull')}</option>`;
+}
 function renderEmployeeListOnly(){
  const list=$('employeeList');if(!list)return;
  const temp=loadTempAbsence(), range=activeLeaveNames();
  list.innerHTML=data.employees.map((n,i)=>{
-   const checked=temp.includes(n)||range.includes(n);
    const locked=range.includes(n);
-   return `<label class="emp ${checked?'absent':''}"><input type="checkbox" value="${i}" data-name="${esc(n)}" ${checked?'checked':''} ${locked?'disabled':''}><span>${esc(n)}${locked?tr('rangeTag'):''}</span></label>`;
+   const type=locked?'full':(temp[n]||'');
+   const cls=type==='full'?'absent':type==='am'?'half-am':type==='pm'?'half-pm':'';
+   return `<label class="emp ${cls}"><span class="emp-name">${esc(n)}${locked?tr('rangeTag'):''}</span><select class="emp-status" data-name="${esc(n)}" ${locked?'disabled':''}>${tempLeaveOptions(type)}</select></label>`;
  }).join('');
 }
 function renderCalc(){
@@ -467,9 +527,14 @@ function renderRecords(){
 
 function updateResultText(){
  if(!lastResult)return;
- const missing=lastResult.missing;
- $('missingBig').textContent=`${missing} ${tr('person')}`;
- $('statusText').textContent=missing>0?tr('arrangeStudents',missing):tr('noStudent');
+ if(Number.isFinite(lastResult.missingMorning)&&Number.isFinite(lastResult.missingAfternoon)){
+   $('missingBig').textContent=`${tr('morning')} ${lastResult.missingMorning} ${tr('person')}／${tr('afternoon')} ${lastResult.missingAfternoon} ${tr('person')}`;
+   $('statusText').textContent=(lastResult.missingMorning||lastResult.missingAfternoon)?`${tr('morning')}需補 ${lastResult.missingMorning} 人，${tr('afternoon')}需補 ${lastResult.missingAfternoon} 人`:tr('noStudent');
+ }else{
+   const missing=lastResult.missing;
+   $('missingBig').textContent=`${missing} ${tr('person')}`;
+   $('statusText').textContent=missing>0?tr('arrangeStudents',missing):tr('noStudent');
+ }
  $('conditions').textContent=`${lastResult.product}｜${tr('washCondition',lastResult.wash)}${lastResult.jubao?`｜${tr('jubaoShort')}`:''}${lastResult.screw?`｜${tr('screwShort')}`:''}`;
 }
 
@@ -520,7 +585,10 @@ function deleteEmployee(index){
   persist();
   saveLeaves(loadLeaves().filter(x=>x.name!==removed));
   const all=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
-  Object.keys(all).forEach(d=>all[d]=(all[d]||[]).filter(n=>n!==removed));
+  Object.keys(all).forEach(d=>{
+   if(Array.isArray(all[d]))all[d]=all[d].filter(n=>n!==removed);
+   else if(all[d]&&typeof all[d]==='object')delete all[d][removed];
+  });
   localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(all));
   renderSettings();
   renderCalc();
@@ -530,19 +598,29 @@ function deleteEmployee(index){
 function calc(){
  const p=data.products.find(x=>x.id===$('product').value); if(!p)return;
  const wash=Number(document.querySelector('input[name=wash]:checked').value);
- const absentNames=[...new Set([
-   ...[...document.querySelectorAll('#employeeList input:checked')].map(x=>x.dataset.name),
-   ...activeLeaveNames()
- ])];
- const absent=absentNames.length;
+ const temp=loadTempAbsence();
+ const range=new Set(activeLeaveNames());
+ const absentMorning=data.employees.filter(name=>range.has(name)||temp[name]==='am'||temp[name]==='full').length;
+ const absentAfternoon=data.employees.filter(name=>range.has(name)||temp[name]==='pm'||temp[name]==='full').length;
  let need=p.base+(wash===2?data.rules.wash2Add:0)+($('jubao').checked?data.rules.jubaoAdd:0)+($('screw').checked?p.screwAdd:0);
- const formalTotal=data.employees.length, formalPresent=Math.max(0,formalTotal-absent), missing=Math.max(0,need-formalPresent);
- lastResult={date:selectedDate(),product:p.name,need,formalTotal,absent,formalPresent,totalPresent:formalPresent,missing,wash,jubao:$('jubao').checked,screw:$('screw').checked};
- $('need').textContent=need;$('formalTotal').textContent=formalTotal;$('absentCount').textContent=absent;$('formalPresent').textContent=formalPresent;
- 
- updateResultText();
- $('statusText').style.color=missing>0?'var(--bad)':'var(--ok)';$('missingBig').style.color=missing>0?'var(--bad)':'var(--ok)';
- 
+ const formalTotal=data.employees.length;
+ const presentMorning=Math.max(0,formalTotal-absentMorning);
+ const presentAfternoon=Math.max(0,formalTotal-absentAfternoon);
+ const missingMorning=Math.max(0,need-presentMorning);
+ const missingAfternoon=Math.max(0,need-presentAfternoon);
+ const absent=Math.max(absentMorning,absentAfternoon);
+ const formalPresent=Math.min(presentMorning,presentAfternoon);
+ const missing=Math.max(missingMorning,missingAfternoon);
+ lastResult={date:selectedDate(),product:p.name,need,formalTotal,absent,formalPresent,totalPresent:formalPresent,missing,wash,jubao:$('jubao').checked,screw:$('screw').checked,absentMorning,absentAfternoon,presentMorning,presentAfternoon,missingMorning,missingAfternoon};
+ $('need').textContent=need;
+ $('formalTotal').textContent=formalTotal;
+ $('absentCount').textContent=`${tr('morning')} ${absentMorning}／${tr('afternoon')} ${absentAfternoon}`;
+ $('formalPresent').textContent=`${tr('morning')} ${presentMorning}／${tr('afternoon')} ${presentAfternoon}`;
+ $('missingBig').textContent=`${tr('morning')} ${missingMorning} ${tr('person')}／${tr('afternoon')} ${missingAfternoon} ${tr('person')}`;
+ $('statusText').textContent=(missingMorning||missingAfternoon)?`${tr('morning')}需補 ${missingMorning} 人，${tr('afternoon')}需補 ${missingAfternoon} 人`:tr('noStudent');
+ $('conditions').textContent=`${p.name}｜${tr('washCondition',wash)}${$('jubao').checked?`｜${tr('jubaoShort')}`:''}${$('screw').checked?`｜${tr('screwShort')}`:''}`;
+ $('statusText').style.color=(missingMorning||missingAfternoon)?'var(--bad)':'var(--ok)';
+ $('missingBig').style.color=(missingMorning||missingAfternoon)?'var(--bad)':'var(--ok)';
  $('result').classList.add('show');$('result').scrollIntoView({behavior:'smooth'});
 }
 
@@ -599,6 +677,12 @@ async function uploadCloud(silent=false){
   const products=(data.products||[]).map((p,i)=>({id:String(p.id),name:p.name,base_people:Number(p.base)||0,screw_add:Number(p.screwAdd)||0,sort_order:i,updated_at:now}));
   const employees=(data.employees||[]).map((name,i)=>({name,sort_order:i,updated_at:now}));
   const leaves=loadLeaves().map(x=>({employee_name:x.name,start_date:x.start,end_date:x.end,updated_at:now}));
+  const tempRows=[];
+  const tempByDate=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
+  Object.entries(tempByDate).forEach(([date,statuses])=>{
+   if(Array.isArray(statuses))statuses.forEach(name=>tempRows.push({absence_date:date,employee_name:name}));
+   else Object.entries(statuses||{}).forEach(([name,type])=>tempRows.push({absence_date:date,employee_name:encodeTempEmployeeName(name,type)}));
+  });
   const records=(JSON.parse(localStorage.getItem('manpowerV1Records')||'[]')).map(r=>{
    r=normalizeRecord(r);return {record_date:r.date,product:r.product,need:r.need,formal_total:r.formalTotal,absent:r.absent,formal_present:r.formalPresent,total_present:r.totalPresent,missing:r.missing,wash:r.wash,jubao:r.jubao,screw:r.screw};
   });
@@ -608,6 +692,7 @@ async function uploadCloud(silent=false){
    await replaceTable('manpower_products',products);
    await replaceTable('manpower_employees',employees);
    await replaceTable('manpower_leave_records',leaves);
+   await replaceTable('manpower_temp_absences',tempRows);
    await replaceTable('manpower_daily_records',records);
   } finally {applyingRemote=false;}
   setCloudStatus('雲端同步正常','online');markSynced();if(!silent)showToast('已上傳雲端');
@@ -634,7 +719,7 @@ async function downloadCloud(silent=false){
    if(employeesR.data?.length)data.employees=employeesR.data.map(e=>e.name);
    localStorage.setItem('manpowerV1Data',JSON.stringify(data));
    localStorage.setItem('manpowerV1Leaves',JSON.stringify((leavesR.data||[]).map(x=>({name:x.employee_name,start:x.start_date,end:x.end_date}))));
-   const byDate={};(tempR.data||[]).forEach(x=>{(byDate[x.absence_date]??=[]).push(x.employee_name)});
+   const byDate={};(tempR.data||[]).forEach(x=>{const d=decodeTempEmployeeName(x.employee_name);(byDate[x.absence_date]??={})[d.name]=d.type});
    localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(byDate));
    localStorage.setItem('manpowerV1Records',JSON.stringify((recordsR.data||[]).map(x=>normalizeRecord(x))));
    migrateStoredData();applyLanguage();renderCalc();renderSettings();renderRecords();
@@ -642,9 +727,30 @@ async function downloadCloud(silent=false){
   setCloudStatus('雲端同步正常','online');markSynced();if(!silent)showToast('已下載雲端資料');return true;
  }catch(err){applyingRemote=false;setCloudStatus('下載失敗：'+err.message,'error');if(!silent)alert('下載失敗：'+err.message);return false;}
 }
+let manualDirty=localStorage.getItem('manpowerManualDirty')==='1';
+function updateManualSaveStatus(){
+ const el=$('manualSaveStatus');if(!el)return;
+ if(manualDirty){
+  el.textContent='🟡 尚未同步';
+  el.style.color='#b45309';
+ }else{
+  el.textContent='🟢 已同步';
+  el.style.color='#15803d';
+ }
+}
+function markManualDirty(){
+ manualDirty=true;
+ localStorage.setItem('manpowerManualDirty','1');
+ updateManualSaveStatus();
+}
+function markManualSynced(){
+ manualDirty=false;
+ localStorage.removeItem('manpowerManualDirty');
+ updateManualSaveStatus();
+}
 function scheduleCloudUpload(){
- if(!cloudReady||applyingRemote)return;
- clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>uploadCloud(true),900);
+ if(applyingRemote)return;
+ markManualDirty();
 }
 function scheduleRemoteDownload(){
  if(!cloudReady||applyingRemote)return;
@@ -675,12 +781,7 @@ async function connectCloud(auto=false){
   }
   cloudReady=true;setCloudStatus('已連線，正在取得資料…','syncing');
   for(const ch of cloudChannels)await cloudClient.removeChannel(ch);cloudChannels=[];
-  for(const table of CLOUD_TABLES){
-   const handler=table==='manpower_temp_absences'?scheduleTempCloudRefresh:scheduleRemoteDownload;
-   const ch=cloudClient.channel('live-'+table).on('postgres_changes',{event:'*',schema:'public',table},handler).subscribe();
-   cloudChannels.push(ch);
-  }
-  await processPendingTempOps();
+  // 手動同步版：不訂閱即時變更，避免操作途中自動重畫畫面。
   const gotCloudData=await downloadCloud(true);
   if(!gotCloudData){setCloudStatus('雲端同步正常','online');}
   if(!auto)showToast('雲端連線成功');
@@ -707,11 +808,26 @@ function initCloudUI(){
  showLastSync();
  $('reconnectCloud').onclick=()=>resetCloudConnection();
  $('uploadCloud').onclick=()=>uploadCloud(false);
- $('downloadCloud').onclick=()=>downloadCloud(false);
+ $('downloadCloud').onclick=async()=>{const ok=await downloadCloud(false);if(ok)markManualSynced()};
+ $('manualUpload').onclick=async()=>{
+  if(!cloudReady){alert('目前尚未連上雲端，請稍後再試。');return;}
+  const btn=$('manualUpload');btn.disabled=true;btn.textContent='同步中…';
+  const ok=await uploadCloud(false);
+  btn.disabled=false;btn.textContent='同步到雲端';
+  if(ok!==false)markManualSynced();
+ };
+ $('manualDownload').onclick=async()=>{
+  if(manualDirty&&!confirm('這台裝置還有尚未同步的修改。讀取雲端資料會覆蓋本機內容，確定繼續嗎？'))return;
+  const btn=$('manualDownload');btn.disabled=true;btn.textContent='讀取中…';
+  const ok=await downloadCloud(false);
+  btn.disabled=false;btn.textContent='讀取最新資料';
+  if(ok)markManualSynced();
+ };
+ updateManualSaveStatus();
  window.addEventListener('online',()=>{setCloudStatus('網路已恢復，正在重新連線…','syncing');resetCloudConnection();});
  window.addEventListener('offline',()=>{cloudReady=false;setCloudStatus('目前離線，資料暫存於此裝置','error');});
- document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!cloudReady&&navigator.onLine)resetCloudConnection();});
- setInterval(()=>{if(!cloudReady&&navigator.onLine)connectCloud(true);else if(cloudReady)processPendingTempOps()},15000);
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!cloudReady&&navigator.onLine&&!manualDirty)resetCloudConnection();});
+ setInterval(()=>{if(!cloudReady&&navigator.onLine)connectCloud(true)},15000);
  connectCloud(true);
 }
 
@@ -720,20 +836,22 @@ $('calculate').onclick=calc;
 $('queryDate').onchange=()=>{lastResult=null;$('result').classList.remove('show');renderCalc();};
 $('langSwitch').onclick=()=>{lang=lang==='zh'?'vi':'zh';localStorage.setItem('manpowerV1Lang',lang);scheduleCloudUpload();applyLanguage();showToast(tr('saved'))};
 $('employeeList').onchange=e=>{
- const input=e.target.closest('input[type=checkbox]');
- if(!input||input.disabled)return;
- const date=selectedDate(),name=input.dataset.name;
- const temp=[...document.querySelectorAll('#employeeList input:checked:not(:disabled)')].map(x=>x.dataset.name);
+ const select=e.target.closest('select.emp-status');
+ if(!select||select.disabled)return;
+ const date=selectedDate();
+ const temp=loadTempAbsence(date);
+ if(select.value)temp[select.dataset.name]=select.value;
+ else delete temp[select.dataset.name];
  saveTempAbsence(temp,date);
- input.closest('.emp')?.classList.toggle('absent',input.checked);
- queueTempAbsenceOp(date,name,input.checked);
- showToast(tr('saved'));
+ renderEmployeeListOnly();
+ markManualDirty();
+ showToast('已暫存在此裝置');
 };
 $('clearAbsence').onclick=()=>{
- const date=selectedDate(),names=loadTempAbsence(date);
- saveTempAbsence([],date);
- names.forEach(name=>queueTempAbsenceOp(date,name,false));
+ const date=selectedDate();
+ saveTempAbsence({},date);
  renderEmployeeListOnly();
+ markManualDirty();
  showToast(tr('cleared'));
 };
 $('addLeave').onclick=()=>{const arr=loadLeaves();arr.push({name:data.employees[0]||'',start:selectedDate(),end:selectedDate()});saveLeaves(arr);renderCalc();showToast(tr('added'))};
