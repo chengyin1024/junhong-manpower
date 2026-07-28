@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#111827" />
-  <title>人力計算系統 V2.1.5</title>
+  <title>人力計算系統 V2.1.6</title>
   <style>
     :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--warn:#b45309;--bad:#b91c1c}
     *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
@@ -20,6 +19,9 @@
     button.primary{width:100%;border:0;border-radius:14px;background:#111827;color:#fff;padding:15px;font-size:17px;font-weight:800;margin-top:12px}.secondary{border:1px solid #d1d5db;background:#fff;border-radius:10px;padding:9px 12px;font-weight:700}.danger{border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:9px;padding:7px 9px}
     .result{display:none}.result.show{display:block}.big{font-size:42px;font-weight:900;text-align:center;margin:4px 0}.status{text-align:center;font-weight:800;margin-bottom:15px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat{border:1px solid var(--line);border-radius:12px;padding:12px}.stat small{color:var(--muted);display:block}.stat strong{font-size:22px}.full{grid-column:1/-1}
     .settings-row{display:grid;grid-template-columns:1fr 90px 78px 36px;gap:7px;align-items:center;margin:8px 0}.settings-row.employee{grid-template-columns:minmax(0,1fr) 90px 36px}.settings-row input,.settings-row select{padding:9px;font-size:14px}
+    .settings-category-title{font-weight:900;font-size:14px;margin:16px 0 7px;padding:8px 10px;border-radius:10px;background:#f3f4f6}
+    .settings-row.employee.paint{background:#e5e7eb;border-radius:12px;padding:7px}
+    .emp.paint{background:#f3f4f6;border-color:#d1d5db}
     table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:10px 6px;border-bottom:1px solid var(--line)}
     .empty{color:var(--muted);text-align:center;padding:20px 0}.notice{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:12px;padding:11px;font-size:14px}
     @media(max-width:480px){
@@ -111,7 +113,7 @@
     <h1 data-i18n="appTitle">人力計算系統</h1>
     <div class="top-actions">
       <button id="langSwitch" class="lang-btn" type="button">VI</button>
-      <span class="tag">V2.1.5</span>
+      <span class="tag">V2.1.6</span>
     </div>
   </div>
   <div class="tabs">
@@ -168,8 +170,11 @@
       <div class="stats">
         <div class="stat"><small data-i18n="todayNeed">今日需求</small><strong id="need">0</strong> 人</div>
         <div class="stat"><small data-i18n="formalTotal">正式員工總數</small><strong id="formalTotal">0</strong> 人</div>
-        <div class="stat"><small data-i18n="leaveCount">請假</small><strong id="absentCount">0</strong> 人</div>
-        <div class="stat"><small data-i18n="formalPresent">正式員工實到</small><strong id="formalPresent">0</strong> 人</div>
+        <div class="stat"><small data-i18n="productionTotal">一般作業員總數</small><strong id="productionTotal">0</strong> 人</div>
+        <div class="stat"><small data-i18n="paintTotal">烤漆人員總數</small><strong id="paintTotal">0</strong> 人</div>
+        <div class="stat"><small data-i18n="productionPresent">一般作業員實到</small><strong id="formalPresent">0</strong> 人</div>
+        <div class="stat"><small data-i18n="paintPresent">烤漆人員實到</small><strong id="paintPresent">0</strong> 人</div>
+        <div class="stat full"><small data-i18n="leaveCount">全部請假人數</small><strong id="absentCount">0</strong> 人</div>
         <div class="stat full"><small data-i18n="conditions">計算條件</small><strong id="conditions" style="font-size:16px"></strong></div>
       </div>
       <button id="saveRecord" class="primary" data-i18n="saveToday">儲存所選日期人力</button>
@@ -420,7 +425,7 @@ const translations={
     tempLeave:'今日臨時請假',tempLeaveHint:'每個日期分別儲存，可選上午、下午或全天請假。',clearTempLeave:'清除所選日期臨時請假',normal:'正常',leaveAM:'上午請假',leavePM:'下午請假',leaveFull:'全天請假',morning:'上午',afternoon:'下午',
     rangeLeave:'日期區間請假',rangeLeaveHint:'設定期間後會每天自動計入請假；結束日隔天自動恢復到班。',addRangeLeave:'新增區間請假',
     calculate:'開始計算',resultTitle:'計算結果',studentsNeeded:'還需要學生',todayNeed:'今日需求',formalTotal:'正式員工總數',
-    leaveCount:'請假',formalPresent:'正式員工實到',conditions:'計算條件',saveToday:'儲存所選日期人力',
+    leaveCount:'全部請假人數',formalPresent:'正式員工實到',productionTotal:'一般作業員總數',paintTotal:'烤漆人員總數',productionPresent:'一般作業員實到',paintPresent:'烤漆人員實到',conditions:'計算條件',saveToday:'儲存所選日期人力',
     storageNotice:'所有設定會儲存在這台裝置的瀏覽器中。',productSettings:'產品需求設定',
     productHint:'基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。',addProduct:'新增產品',saveProducts:'儲存產品設定',productSaved:'產品設定已儲存成功！',
     specialRules:'特殊規則',washTwoAdd:'洗2個增加人數',jubaoAdd:'巨堡印刷增加人數',saveRules:'儲存規則',
@@ -440,7 +445,7 @@ const translations={
     tempLeave:'Nghỉ tạm thời',tempLeaveHint:'Mỗi ngày lưu riêng; có thể chọn nghỉ sáng, chiều hoặc cả ngày.',clearTempLeave:'Xóa nghỉ tạm thời của ngày đã chọn',normal:'Đi làm',leaveAM:'Nghỉ sáng',leavePM:'Nghỉ chiều',leaveFull:'Nghỉ cả ngày',morning:'Buổi sáng',afternoon:'Buổi chiều',
     rangeLeave:'Nghỉ theo khoảng ngày',rangeLeaveHint:'Sau khi cài đặt, hệ thống tự tính nghỉ mỗi ngày; ngày sau khi kết thúc sẽ tự đi làm lại.',addRangeLeave:'Thêm nghỉ theo khoảng ngày',
     calculate:'Bắt đầu tính',resultTitle:'Kết quả tính',studentsNeeded:'Số sinh viên cần thêm',todayNeed:'Nhu cầu hôm nay',formalTotal:'Tổng nhân viên chính thức',
-    leaveCount:'Nghỉ',formalPresent:'Nhân viên chính thức có mặt',conditions:'Điều kiện tính',saveToday:'Lưu nhân lực ngày đã chọn',
+    leaveCount:'Tổng số người nghỉ',formalPresent:'Nhân viên chính thức có mặt',productionTotal:'Tổng nhân viên sản xuất',paintTotal:'Tổng nhân viên sơn',productionPresent:'Nhân viên sản xuất có mặt',paintPresent:'Nhân viên sơn có mặt',conditions:'Điều kiện tính',saveToday:'Lưu nhân lực ngày đã chọn',
     storageNotice:'Mọi cài đặt được lưu trong trình duyệt của thiết bị này.',productSettings:'Cài đặt nhu cầu sản phẩm',
     productHint:'Nhu cầu cơ bản lấy mốc: rửa 1 bộ, không Jubao, không tháo vít.',addProduct:'Thêm sản phẩm',saveProducts:'Lưu cài đặt sản phẩm',productSaved:'Đã lưu cài đặt sản phẩm thành công!',
     specialRules:'Quy tắc đặc biệt',washTwoAdd:'Số người tăng khi rửa 2 bộ',jubaoAdd:'Số người tăng khi in Jubao',saveRules:'Lưu quy tắc',
@@ -463,7 +468,7 @@ function applyLanguage(){
   document.documentElement.lang=lang==='vi'?'vi':'zh-Hant';
   document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=tr(el.dataset.i18n)});
   $('langSwitch').textContent=lang==='zh'?'VI':'中文';
-  document.title=`${tr('appTitle')} V2.1.5`;
+  document.title=`${tr('appTitle')} V2.1.6`;
   renderCalc();
   const active=document.querySelector('.tab.active')?.dataset.tab;
   if(active==='settings')renderSettings();
@@ -517,7 +522,8 @@ function renderEmployeeListOnly(){
    const locked=range.includes(n);
    const type=locked?'full':(temp[n]||'');
    const cls=type==='full'?'absent':type==='am'?'half-am':type==='pm'?'half-pm':'';
-   return `<label class="emp ${cls}"><span class="emp-name">${esc(n)}${locked?tr('rangeTag'):''}</span><select class="emp-status" data-name="${esc(n)}" ${locked?'disabled':''}>${tempLeaveOptions(type)}</select></label>`;
+   const paintClass=employeeCategory(n)==='烤漆'?'paint':'';
+   return `<label class="emp ${paintClass} ${cls}"><span class="emp-name">${esc(n)}${locked?tr('rangeTag'):''}</span><select class="emp-status" data-name="${esc(n)}" ${locked?'disabled':''}>${tempLeaveOptions(type)}</select></label>`;
  }).join('');
 }
 function renderCalc(){
@@ -548,7 +554,11 @@ function renderSettings(){
  $('productSettings').innerHTML=data.products.map((p,i)=>`<div class="settings-row"><input data-pname="${i}" value="${esc(p.name)}"><input data-pbase="${i}" type="number" min="0" value="${p.base}"><input data-pscrew="${i}" type="number" min="0" value="${p.screwAdd}"><button type="button" class="danger" onclick="deleteProduct(${i})" aria-label="刪除">×</button></div>`).join('')+
  `<div class="settings-row hint"><span>${tr('productName')}</span><span>${tr('basePeople')}</span><span>${tr('screwAdd')}</span><span></span></div>`;
  $('wash2Add').value=data.rules.wash2Add;$('jubaoAdd').value=data.rules.jubaoAdd;
- $('employeeSettings').innerHTML=sortedEmployees().map(({name:n,index:i,category})=>`<div class="settings-row employee"><input data-ename="${i}" value="${esc(n)}"><select data-ecategory="${i}">${categoryOptions(category)}</select><button type="button" class="danger" onclick="deleteEmployee(${i})" aria-label="刪除">×</button></div>`).join('');
+ const employeeGroups=['1F','2F','烤漆'];
+ $('employeeSettings').innerHTML=employeeGroups.map(group=>{
+   const rows=sortedEmployees().filter(x=>x.category===group).map(({name:n,index:i,category})=>`<div class="settings-row employee ${group==='烤漆'?'paint':''}"><input data-ename="${i}" value="${esc(n)}"><select data-ecategory="${i}">${categoryOptions(category)}</select><button type="button" class="danger" onclick="deleteEmployee(${i})" aria-label="刪除">×</button></div>`).join('');
+   return `<div class="settings-category-title">${group==='烤漆'?tr('categoryPaint'):group}</div>${rows}`;
+ }).join('');
 }
 function renderRecords(){
  const records=JSON.parse(localStorage.getItem('manpowerV1Records')||'[]');
@@ -649,22 +659,48 @@ function calc(){
  const wash=Number(document.querySelector('input[name=wash]:checked').value);
  const temp=loadTempAbsence();
  const range=new Set(activeLeaveNames());
- const absentMorning=data.employees.filter(name=>range.has(name)||temp[name]==='am'||temp[name]==='full').length;
- const absentAfternoon=data.employees.filter(name=>range.has(name)||temp[name]==='pm'||temp[name]==='full').length;
+ const productionEmployees=data.employees.filter(name=>employeeCategory(name)!=='烤漆');
+ const paintEmployees=data.employees.filter(name=>employeeCategory(name)==='烤漆');
+ const isAbsentMorning=name=>range.has(name)||temp[name]==='am'||temp[name]==='full';
+ const isAbsentAfternoon=name=>range.has(name)||temp[name]==='pm'||temp[name]==='full';
+
+ const productionAbsentMorning=productionEmployees.filter(isAbsentMorning).length;
+ const productionAbsentAfternoon=productionEmployees.filter(isAbsentAfternoon).length;
+ const paintAbsentMorning=paintEmployees.filter(isAbsentMorning).length;
+ const paintAbsentAfternoon=paintEmployees.filter(isAbsentAfternoon).length;
+
  let need=p.base+(wash===2?data.rules.wash2Add:0)+($('jubao').checked?data.rules.jubaoAdd:0)+($('screw').checked?p.screwAdd:0);
+
  const formalTotal=data.employees.length;
- const presentMorning=Math.max(0,formalTotal-absentMorning);
- const presentAfternoon=Math.max(0,formalTotal-absentAfternoon);
+ const productionTotal=productionEmployees.length;
+ const paintTotal=paintEmployees.length;
+ const presentMorning=Math.max(0,productionTotal-productionAbsentMorning);
+ const presentAfternoon=Math.max(0,productionTotal-productionAbsentAfternoon);
+ const paintPresentMorning=Math.max(0,paintTotal-paintAbsentMorning);
+ const paintPresentAfternoon=Math.max(0,paintTotal-paintAbsentAfternoon);
+
  const missingMorning=Math.max(0,need-presentMorning);
  const missingAfternoon=Math.max(0,need-presentAfternoon);
+ const absentMorning=productionAbsentMorning+paintAbsentMorning;
+ const absentAfternoon=productionAbsentAfternoon+paintAbsentAfternoon;
  const absent=Math.max(absentMorning,absentAfternoon);
  const formalPresent=Math.min(presentMorning,presentAfternoon);
  const missing=Math.max(missingMorning,missingAfternoon);
- lastResult={date:selectedDate(),product:p.name,need,formalTotal,absent,formalPresent,totalPresent:formalPresent,missing,wash,jubao:$('jubao').checked,screw:$('screw').checked,absentMorning,absentAfternoon,presentMorning,presentAfternoon,missingMorning,missingAfternoon};
+
+ lastResult={
+  date:selectedDate(),product:p.name,need,formalTotal,productionTotal,paintTotal,absent,
+  formalPresent,totalPresent:formalPresent,missing,wash,jubao:$('jubao').checked,screw:$('screw').checked,
+  absentMorning,absentAfternoon,presentMorning,presentAfternoon,
+  paintPresentMorning,paintPresentAfternoon,missingMorning,missingAfternoon
+ };
+
  $('need').textContent=need;
  $('formalTotal').textContent=formalTotal;
+ $('productionTotal').textContent=productionTotal;
+ $('paintTotal').textContent=paintTotal;
  $('absentCount').textContent=`${tr('morning')} ${absentMorning}／${tr('afternoon')} ${absentAfternoon}`;
  $('formalPresent').textContent=`${tr('morning')} ${presentMorning}／${tr('afternoon')} ${presentAfternoon}`;
+ $('paintPresent').textContent=`${tr('morning')} ${paintPresentMorning}／${tr('afternoon')} ${paintPresentAfternoon}`;
  $('missingBig').textContent=`${tr('morning')} ${missingMorning} ${tr('person')}／${tr('afternoon')} ${missingAfternoon} ${tr('person')}`;
  $('statusText').textContent=(missingMorning||missingAfternoon)?`${tr('morning')}需補 ${missingMorning} 人，${tr('afternoon')}需補 ${missingAfternoon} 人`:tr('noStudent');
  $('conditions').textContent=`${p.name}｜${tr('washCondition',wash)}${$('jubao').checked?`｜${tr('jubaoShort')}`:''}${$('screw').checked?`｜${tr('screwShort')}`:''}`;
