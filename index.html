@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#111827" />
-  <title>人力計算系統 V2.1.4</title>
+  <title>人力計算系統 V2.1.5</title>
   <style>
     :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--warn:#b45309;--bad:#b91c1c}
     *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
@@ -18,7 +19,7 @@
     .employee-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.emp.absent{background:#fef2f2;border-color:#fecaca;color:#991b1b}.leave-row{display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:7px;align-items:center;margin:8px 0}.leave-row input,.leave-row select{padding:9px;font-size:14px}.emp{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px}.emp input{width:18px;height:18px}.emp-name{font-weight:700}.emp-status{width:auto;min-width:104px;padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:#fff}.emp.half-am{background:#fffbeb;border-color:#fde68a;color:#92400e}.emp.half-pm{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
     button.primary{width:100%;border:0;border-radius:14px;background:#111827;color:#fff;padding:15px;font-size:17px;font-weight:800;margin-top:12px}.secondary{border:1px solid #d1d5db;background:#fff;border-radius:10px;padding:9px 12px;font-weight:700}.danger{border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:9px;padding:7px 9px}
     .result{display:none}.result.show{display:block}.big{font-size:42px;font-weight:900;text-align:center;margin:4px 0}.status{text-align:center;font-weight:800;margin-bottom:15px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat{border:1px solid var(--line);border-radius:12px;padding:12px}.stat small{color:var(--muted);display:block}.stat strong{font-size:22px}.full{grid-column:1/-1}
-    .settings-row{display:grid;grid-template-columns:1fr 90px 78px 36px;gap:7px;align-items:center;margin:8px 0}.settings-row.employee{grid-template-columns:1fr 92px 36px}.settings-row input,.settings-row select{padding:9px;font-size:14px}
+    .settings-row{display:grid;grid-template-columns:1fr 90px 78px 36px;gap:7px;align-items:center;margin:8px 0}.settings-row.employee{grid-template-columns:minmax(0,1fr) 90px 36px}.settings-row input,.settings-row select{padding:9px;font-size:14px}
     table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:10px 6px;border-bottom:1px solid var(--line)}
     .empty{color:var(--muted);text-align:center;padding:20px 0}.notice{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:12px;padding:11px;font-size:14px}
     @media(max-width:480px){
@@ -39,7 +40,7 @@
     padding:7px 0;
   }
   .settings-row.employee{
-    grid-template-columns:minmax(0,1fr) 72px 32px;
+    grid-template-columns:minmax(0,1fr) 82px 32px;
   }
 
   /* 日期區間請假：手機版改成較寬鬆的兩層排列 */
@@ -110,7 +111,7 @@
     <h1 data-i18n="appTitle">人力計算系統</h1>
     <div class="top-actions">
       <button id="langSwitch" class="lang-btn" type="button">VI</button>
-      <span class="tag">V2.1.4</span>
+      <span class="tag">V2.1.5</span>
     </div>
   </div>
   <div class="tabs">
@@ -235,7 +236,8 @@ const defaults={
   {id:'p5',name:'410mm',base:37,screwAdd:1}
  ],
  rules:{wash2Add:3,jubaoAdd:1},
- employees:['陳欽境','程樹生','徐文正','陳芊蓁','宋金香','阮蓓葩','陳淑君','陳立君','陳李嬌','陳榮春','吳棟茂','阮氏秋妹','陳文興','丁氏碧緣','阮文區','黃氏草','黎如意','陳文還','黎氏燕','阮庭明','馬龍','安娜','阮氏玉玲','黃氏玲','陳氏乙六','陳文貴','阮氏玲','楊成論','范中後','馮賢','進雄','范祥維','阮明敏']
+ employees:['陳欽境','程樹生','徐文正','陳芊蓁','宋金香','阮蓓葩','陳淑君','陳立君','陳李嬌','陳榮春','吳棟茂','阮氏秋妹','陳文興','丁氏碧緣','阮文區','黃氏草','黎如意','陳文還','黎氏燕','阮庭明','馬龍','安娜','阮氏玉玲','黃氏玲','陳氏乙六','陳文貴','阮氏玲','楊成論','范中後','馮賢','進雄','范祥維','阮明敏'],
+ employeeCategories:{}
 };
 let data=JSON.parse(localStorage.getItem('manpowerV1Data')||'null')||structuredClone(defaults);
 
@@ -251,6 +253,14 @@ function migrateStoredData(){
  let changed=false;
  data.employees=(data.employees||[]).map(n=>{const nn=migrateName(n);if(nn!==n)changed=true;return nn});
  data.employees=[...new Set(data.employees)];
+ const oldCategories=(data.employeeCategories&&typeof data.employeeCategories==='object')?data.employeeCategories:{};
+ const migratedCategories={};
+ data.employees.forEach(name=>{
+   const sourceName=Object.keys(oldCategories).find(k=>migrateName(k)===name);
+   const category=oldCategories[name]||oldCategories[sourceName]||'1F';
+   migratedCategories[name]=['1F','2F','烤漆'].includes(category)?category:'1F';
+ });
+ if(JSON.stringify(data.employeeCategories||{})!==JSON.stringify(migratedCategories)){data.employeeCategories=migratedCategories;changed=true;}
  const requiredBases={'260mm':39,'310mm':39,'410mm':37};
  (data.products||[]).forEach(p=>{if(requiredBases[p.name]!==undefined&&p.base!==requiredBases[p.name]){p.base=requiredBases[p.name];changed=true}});
  const leaves=JSON.parse(localStorage.getItem('manpowerV1Leaves')||'[]');
@@ -414,7 +424,7 @@ const translations={
     storageNotice:'所有設定會儲存在這台裝置的瀏覽器中。',productSettings:'產品需求設定',
     productHint:'基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。',addProduct:'新增產品',saveProducts:'儲存產品設定',productSaved:'產品設定已儲存成功！',
     specialRules:'特殊規則',washTwoAdd:'洗2個增加人數',jubaoAdd:'巨堡印刷增加人數',saveRules:'儲存規則',
-    employeeListTitle:'正式員工名單',addEmployee:'新增員工',saveEmployees:'儲存員工名單',
+    employeeListTitle:'正式員工名單',addEmployee:'新增員工',saveEmployees:'儲存員工名單',employeeCategory:'分類',category1F:'1F',category2F:'2F',categoryPaint:'烤漆',
     clearRecords:'清除全部紀錄',emptyLeave:'尚未設定區間請假',rangeTag:'（區間請假）',
     productName:'產品名稱',basePeople:'基本人數',screwAdd:'拆螺絲+',formalEmployee:'正式員工',
     emptyRecords:'尚無紀錄',date:'日期',product:'產品',need:'需求',present:'實到',missingStudent:'缺學生',
@@ -434,7 +444,7 @@ const translations={
     storageNotice:'Mọi cài đặt được lưu trong trình duyệt của thiết bị này.',productSettings:'Cài đặt nhu cầu sản phẩm',
     productHint:'Nhu cầu cơ bản lấy mốc: rửa 1 bộ, không Jubao, không tháo vít.',addProduct:'Thêm sản phẩm',saveProducts:'Lưu cài đặt sản phẩm',productSaved:'Đã lưu cài đặt sản phẩm thành công!',
     specialRules:'Quy tắc đặc biệt',washTwoAdd:'Số người tăng khi rửa 2 bộ',jubaoAdd:'Số người tăng khi in Jubao',saveRules:'Lưu quy tắc',
-    employeeListTitle:'Danh sách nhân viên chính thức',addEmployee:'Thêm nhân viên',saveEmployees:'Lưu danh sách nhân viên',
+    employeeListTitle:'Danh sách nhân viên chính thức',addEmployee:'Thêm nhân viên',saveEmployees:'Lưu danh sách nhân viên',employeeCategory:'Phân loại',category1F:'1F',category2F:'2F',categoryPaint:'Sơn',
     clearRecords:'Xóa toàn bộ lịch sử',emptyLeave:'Chưa cài đặt nghỉ theo khoảng ngày',rangeTag:'（nghỉ theo khoảng ngày）',
     productName:'Tên sản phẩm',basePeople:'Nhân lực cơ bản',screwAdd:'Tháo vít +',formalEmployee:'Nhân viên chính thức',
     emptyRecords:'Chưa có lịch sử',date:'Ngày',product:'Sản phẩm',need:'Nhu cầu',present:'Có mặt',missingStudent:'Thiếu SV',
@@ -453,7 +463,7 @@ function applyLanguage(){
   document.documentElement.lang=lang==='vi'?'vi':'zh-Hant';
   document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=tr(el.dataset.i18n)});
   $('langSwitch').textContent=lang==='zh'?'VI':'中文';
-  document.title=`${tr('appTitle')} V2.1.4`;
+  document.title=`${tr('appTitle')} V2.1.5`;
   renderCalc();
   const active=document.querySelector('.tab.active')?.dataset.tab;
   if(active==='settings')renderSettings();
@@ -473,6 +483,27 @@ function showToast(message){
   toastTimer=setTimeout(()=>toast.classList.remove('show'),1600);
 }
 
+function employeeCategory(name){
+ return ['1F','2F','烤漆'].includes(data.employeeCategories?.[name])?data.employeeCategories[name]:'1F';
+}
+function sortedEmployees(){
+ const order={'1F':0,'2F':1,'烤漆':2};
+ return (data.employees||[]).map((name,index)=>({name,index,category:employeeCategory(name)}))
+  .sort((a,b)=>(order[a.category]-order[b.category])||(a.index-b.index));
+}
+function categoryOptions(selected='1F'){
+ return `<option value="1F" ${selected==='1F'?'selected':''}>1F</option>
+ <option value="2F" ${selected==='2F'?'selected':''}>2F</option>
+ <option value="烤漆" ${selected==='烤漆'?'selected':''}>${tr('categoryPaint')}</option>`;
+}
+function encodeCloudEmployeeName(name,category){return `${name}|||CAT:${category}`;}
+function decodeCloudEmployeeName(value){
+ const s=String(value||'');
+ const marker='|||CAT:';const pos=s.lastIndexOf(marker);
+ if(pos<0)return {name:s,category:'1F'};
+ const category=s.slice(pos+marker.length);
+ return {name:s.slice(0,pos),category:['1F','2F','烤漆'].includes(category)?category:'1F'};
+}
 function tempLeaveOptions(selected=''){
  return `<option value="" ${!selected?'selected':''}>${tr('normal')}</option>
  <option value="am" ${selected==='am'?'selected':''}>${tr('leaveAM')}</option>
@@ -482,7 +513,7 @@ function tempLeaveOptions(selected=''){
 function renderEmployeeListOnly(){
  const list=$('employeeList');if(!list)return;
  const temp=loadTempAbsence(), range=activeLeaveNames();
- list.innerHTML=data.employees.map((n,i)=>{
+ list.innerHTML=sortedEmployees().map(({name:n})=>{
    const locked=range.includes(n);
    const type=locked?'full':(temp[n]||'');
    const cls=type==='full'?'absent':type==='am'?'half-am':type==='pm'?'half-pm':'';
@@ -500,7 +531,7 @@ function renderCalc(){
 function renderLeaves(){
  const leaves=loadLeaves();
  $('leaveSettings').innerHTML=leaves.length?leaves.map((x,i)=>`<div class="leave-row">
-   <select data-lname="${i}">${data.employees.map(n=>`<option ${n===x.name?'selected':''}>${esc(n)}</option>`).join('')}</select>
+   <select data-lname="${i}">${sortedEmployees().map(({name:n})=>`<option ${n===x.name?'selected':''}>${esc(n)}</option>`).join('')}</select>
    <input data-lstart="${i}" type="date" value="${x.start}">
    <input data-lend="${i}" type="date" value="${x.end}">
    <button type="button" class="danger" onclick="deleteLeave(${i})" aria-label="刪除">×</button>
@@ -517,7 +548,7 @@ function renderSettings(){
  $('productSettings').innerHTML=data.products.map((p,i)=>`<div class="settings-row"><input data-pname="${i}" value="${esc(p.name)}"><input data-pbase="${i}" type="number" min="0" value="${p.base}"><input data-pscrew="${i}" type="number" min="0" value="${p.screwAdd}"><button type="button" class="danger" onclick="deleteProduct(${i})" aria-label="刪除">×</button></div>`).join('')+
  `<div class="settings-row hint"><span>${tr('productName')}</span><span>${tr('basePeople')}</span><span>${tr('screwAdd')}</span><span></span></div>`;
  $('wash2Add').value=data.rules.wash2Add;$('jubaoAdd').value=data.rules.jubaoAdd;
- $('employeeSettings').innerHTML=data.employees.map((n,i)=>`<div class="settings-row employee"><input data-ename="${i}" value="${esc(n)}"><span class="hint">${tr('formalEmployee')}</span><button type="button" class="danger" onclick="deleteEmployee(${i})" aria-label="刪除">×</button></div>`).join('');
+ $('employeeSettings').innerHTML=sortedEmployees().map(({name:n,index:i,category})=>`<div class="settings-row employee"><input data-ename="${i}" value="${esc(n)}"><select data-ecategory="${i}">${categoryOptions(category)}</select><button type="button" class="danger" onclick="deleteEmployee(${i})" aria-label="刪除">×</button></div>`).join('');
 }
 function renderRecords(){
  const records=JSON.parse(localStorage.getItem('manpowerV1Records')||'[]');
@@ -554,7 +585,24 @@ function syncProductInputs(){
 }
 function syncEmployeeInputs(){
   const inputs=[...document.querySelectorAll('[data-ename]')];
-  if(inputs.length)data.employees=inputs.map(x=>x.value.trim()).filter(Boolean);
+  if(!inputs.length)return;
+  const oldEmployees=[...(data.employees||[])];
+  const nextEmployees=[...oldEmployees];
+  const nextCategories={...(data.employeeCategories||{})};
+  inputs.forEach(input=>{
+    const i=Number(input.dataset.ename);
+    if(!Number.isInteger(i)||!oldEmployees[i])return;
+    const oldName=oldEmployees[i];
+    const newName=input.value.trim();
+    const category=document.querySelector(`[data-ecategory="${i}"]`)?.value||employeeCategory(oldName);
+    if(!newName){nextEmployees[i]='';delete nextCategories[oldName];return;}
+    nextEmployees[i]=newName;
+    if(newName!==oldName)delete nextCategories[oldName];
+    nextCategories[newName]=['1F','2F','烤漆'].includes(category)?category:'1F';
+  });
+  data.employees=nextEmployees.filter(Boolean);
+  data.employeeCategories={};
+  data.employees.forEach(name=>data.employeeCategories[name]=nextCategories[name]||'1F');
 }
 function deleteProduct(index){
   syncProductInputs();
@@ -582,6 +630,7 @@ function deleteEmployee(index){
   if(!confirm(tr('confirmDelete')))return;
   const removed=data.employees[index];
   data.employees.splice(index,1);
+  if(data.employeeCategories)delete data.employeeCategories[removed];
   persist();
   saveLeaves(loadLeaves().filter(x=>x.name!==removed));
   const all=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
@@ -675,7 +724,7 @@ async function uploadCloud(silent=false){
   const now=new Date().toISOString();
   const settings=[{id:'main',wash2_add:Number(data.rules.wash2Add)||0,jubao_add:Number(data.rules.jubaoAdd)||0,language:lang,updated_at:now}];
   const products=(data.products||[]).map((p,i)=>({id:String(p.id),name:p.name,base_people:Number(p.base)||0,screw_add:Number(p.screwAdd)||0,sort_order:i,updated_at:now}));
-  const employees=(data.employees||[]).map((name,i)=>({name,sort_order:i,updated_at:now}));
+  const employees=(data.employees||[]).map((name,i)=>({name:encodeCloudEmployeeName(name,employeeCategory(name)),sort_order:i,updated_at:now}));
   const leaves=loadLeaves().map(x=>({employee_name:x.name,start_date:x.start,end_date:x.end,updated_at:now}));
   const tempRows=[];
   const tempByDate=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
@@ -716,7 +765,7 @@ async function downloadCloud(silent=false){
   try{
    if(settingsR.data){data.rules={wash2Add:settingsR.data.wash2_add,jubaoAdd:settingsR.data.jubao_add};lang=settingsR.data.language||'zh';localStorage.setItem('manpowerV1Lang',lang);}
    if(productsR.data?.length)data.products=productsR.data.map(p=>({id:p.id,name:p.name,base:p.base_people,screwAdd:p.screw_add}));
-   if(employeesR.data?.length)data.employees=employeesR.data.map(e=>e.name);
+   if(employeesR.data?.length){const decoded=employeesR.data.map(e=>decodeCloudEmployeeName(e.name));data.employees=decoded.map(e=>e.name);data.employeeCategories={};decoded.forEach(e=>data.employeeCategories[e.name]=e.category);}
    localStorage.setItem('manpowerV1Data',JSON.stringify(data));
    localStorage.setItem('manpowerV1Leaves',JSON.stringify((leavesR.data||[]).map(x=>({name:x.employee_name,start:x.start_date,end:x.end_date}))));
    const byDate={};(tempR.data||[]).forEach(x=>{const d=decodeTempEmployeeName(x.employee_name);(byDate[x.absence_date]??={})[d.name]=d.type});
@@ -875,7 +924,7 @@ $('saveProducts').onclick=()=>{
  showToast(tr('productSaved'));
 };
 $('saveRules').onclick=()=>{syncProductInputs();data.rules.wash2Add=Math.max(0,+$('wash2Add').value||0);data.rules.jubaoAdd=Math.max(0,+$('jubaoAdd').value||0);persist();renderSettings();renderCalc();showToast(tr('saved'))};
-$('addEmployee').onclick=()=>{syncEmployeeInputs();data.employees.push(tr('newEmployee'));persist();renderSettings();renderCalc();showToast(tr('added'))};
+$('addEmployee').onclick=()=>{syncEmployeeInputs();let base=tr('newEmployee'),name=base,n=2;while(data.employees.includes(name))name=`${base}${n++}`;data.employees.push(name);data.employeeCategories??={};data.employeeCategories[name]='1F';persist();renderSettings();renderCalc();showToast(tr('added'))};
 $('saveEmployees').onclick=()=>{syncEmployeeInputs();persist();renderSettings();renderCalc();showToast(tr('saved'))};
 $('clearRecords').onclick=()=>{if(confirm(tr('confirmClear'))){localStorage.removeItem('manpowerV1Records');scheduleCloudUpload();renderRecords();showToast(tr('cleared'))}};
 $('queryDate').value=todayISO();
