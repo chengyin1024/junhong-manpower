@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#111827" />
-  <title>人力計算系統 V2.1.6</title>
+  <title>人力計算系統 V2.1.7</title>
   <style>
     :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--warn:#b45309;--bad:#b91c1c}
     *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
@@ -113,7 +113,7 @@
     <h1 data-i18n="appTitle">人力計算系統</h1>
     <div class="top-actions">
       <button id="langSwitch" class="lang-btn" type="button">VI</button>
-      <span class="tag">V2.1.6</span>
+      <span class="tag">V2.1.7</span>
     </div>
   </div>
   <div class="tabs">
@@ -411,7 +411,12 @@ async function refreshTempAbsencesFromCloud(){
   setCloudStatus('同步失敗：'+err.message,'error');
  }
 }
-function loadLeaves(){return JSON.parse(localStorage.getItem('manpowerV1Leaves')||'[]')}
+function loadLeaves(){
+ const leaves=JSON.parse(localStorage.getItem('manpowerV1Leaves')||'[]');
+ const active=leaves.filter(x=>x?.end>=todayISO());
+ if(active.length!==leaves.length)localStorage.setItem('manpowerV1Leaves',JSON.stringify(active));
+ return active;
+}
 function saveLeaves(v){localStorage.setItem('manpowerV1Leaves',JSON.stringify(v));scheduleCloudUpload()}
 function activeLeaveNames(date=selectedDate()){
  return [...new Set(loadLeaves().filter(x=>x.start<=date&&date<=x.end).map(x=>x.name))];
@@ -468,7 +473,7 @@ function applyLanguage(){
   document.documentElement.lang=lang==='vi'?'vi':'zh-Hant';
   document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=tr(el.dataset.i18n)});
   $('langSwitch').textContent=lang==='zh'?'VI':'中文';
-  document.title=`${tr('appTitle')} V2.1.6`;
+  document.title=`${tr('appTitle')} V2.1.7`;
   renderCalc();
   const active=document.querySelector('.tab.active')?.dataset.tab;
   if(active==='settings')renderSettings();
@@ -803,12 +808,15 @@ async function downloadCloud(silent=false){
    if(productsR.data?.length)data.products=productsR.data.map(p=>({id:p.id,name:p.name,base:p.base_people,screwAdd:p.screw_add}));
    if(employeesR.data?.length){const decoded=employeesR.data.map(e=>decodeCloudEmployeeName(e.name));data.employees=decoded.map(e=>e.name);data.employeeCategories={};decoded.forEach(e=>data.employeeCategories[e.name]=e.category);}
    localStorage.setItem('manpowerV1Data',JSON.stringify(data));
-   localStorage.setItem('manpowerV1Leaves',JSON.stringify((leavesR.data||[]).map(x=>({name:x.employee_name,start:x.start_date,end:x.end_date}))));
+   const activeCloudLeaves=(leavesR.data||[]).filter(x=>x.end_date>=todayISO());
+   localStorage.setItem('manpowerV1Leaves',JSON.stringify(activeCloudLeaves.map(x=>({name:x.employee_name,start:x.start_date,end:x.end_date}))));
    const byDate={};(tempR.data||[]).forEach(x=>{const d=decodeTempEmployeeName(x.employee_name);(byDate[x.absence_date]??={})[d.name]=d.type});
    localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(byDate));
    localStorage.setItem('manpowerV1Records',JSON.stringify((recordsR.data||[]).map(x=>normalizeRecord(x))));
    migrateStoredData();applyLanguage();renderCalc();renderSettings();renderRecords();
   } finally {applyingRemote=false;}
+  const expiredDelete=await cloudClient.from('manpower_leave_records').delete().lt('end_date',todayISO());
+  if(expiredDelete.error)throw expiredDelete.error;
   setCloudStatus('雲端同步正常','online');markSynced();if(!silent)showToast('已下載雲端資料');return true;
  }catch(err){applyingRemote=false;setCloudStatus('下載失敗：'+err.message,'error');if(!silent)alert('下載失敗：'+err.message);return false;}
 }
