@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>產品管理樣品｜人力計算系統</title>
+  <style>
+    :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--danger:#b91c1c}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}.app{max-width:760px;margin:auto;padding:14px 14px 60px}.top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}.top h1{font-size:22px;margin:0}.tag{font-size:12px;background:#fef3c7;color:#92400e;padding:6px 9px;border-radius:999px;font-weight:800;white-space:nowrap}.back{display:inline-block;margin-top:7px;color:#1d4ed8;font-size:13px;font-weight:800;text-decoration:none}.card{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.05)}h2{font-size:18px;margin:0 0 8px}.hint{font-size:13px;color:var(--muted);line-height:1.55}.tools{display:grid;grid-template-columns:1fr auto;gap:9px;margin:15px 0 10px}input{width:100%;padding:13px 12px;border:1px solid #d1d5db;border-radius:12px;background:#fff;font-size:16px}button{font:inherit;font-weight:800;cursor:pointer}.primary,.secondary,.danger{border-radius:12px;padding:11px 13px}.primary{border:0;background:var(--accent);color:#fff}.secondary{border:1px solid #d1d5db;background:#fff;color:var(--text)}.danger{border:1px solid #fecaca;background:#fff;color:var(--danger)}.count{font-size:13px;color:var(--muted);margin:8px 0}.list{border:1px solid var(--line);border-radius:14px;overflow:auto;max-height:430px}.list-header,.row{display:grid;grid-template-columns:minmax(0,1fr) 82px 82px 68px;gap:8px;align-items:center}.list-header{position:sticky;top:0;z-index:1;background:#f8fafc;color:var(--muted);font-size:12px;font-weight:800;padding:10px 11px;border-bottom:1px solid var(--line)}.row{padding:10px 11px;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}.product-name{font-weight:800;overflow-wrap:anywhere}.number{font-variant-numeric:tabular-nums}.row .secondary{padding:8px 7px;font-size:13px}.empty{padding:30px;text-align:center;color:var(--muted)}.footer-note{margin-top:14px;border-radius:12px;background:#fffbeb;color:#92400e;padding:11px;font-size:13px;line-height:1.5}.overlay{display:none;position:fixed;inset:0;z-index:10;background:rgba(17,24,39,.48);padding:18px;align-items:center;justify-content:center}.overlay.show{display:flex}.modal{width:min(100%,440px);background:#fff;border-radius:18px;padding:18px;box-shadow:0 16px 44px rgba(0,0,0,.23)}.modal h2{margin-bottom:3px}.modal label{display:block;font-size:14px;font-weight:800;margin:16px 0 7px}.modal-actions{display:flex;justify-content:space-between;gap:8px;margin-top:18px}.right-actions{display:flex;gap:8px;margin-left:auto}@media(max-width:480px){.tools{grid-template-columns:1fr}.tools .primary{width:100%}.list-header,.row{grid-template-columns:minmax(0,1fr) 58px 58px 54px;gap:5px;padding-left:8px;padding-right:8px}.list-header{font-size:11px}.row .secondary{padding:8px 3px;font-size:12px}.modal-actions{flex-wrap:wrap}.right-actions{width:100%;margin-left:0}.right-actions button{flex:1}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="top"><div><h1>人力計算系統</h1><div class="hint">產品管理樣品</div><a class="back" href="index.html">← 回人力計算</a></div><span class="tag">只供測試</span></div>
+    <section class="card">
+      <h2>產品需求設定</h2>
+      <div class="hint">新增與修改會用小視窗處理；清單固定高度，產品再多也不會把頁面拉長。</div>
+      <div class="tools"><input id="search" type="search" placeholder="搜尋料號"><button id="add" class="primary" type="button">＋ 新增產品</button></div>
+      <div id="count" class="count"></div>
+      <div class="list">
+        <div class="list-header"><span>料號</span><span>基本人數</span><span>拆螺絲＋</span><span>操作</span></div>
+        <div id="rows"></div>
+      </div>
+      <div class="footer-note">這是樣品頁面：你可以搜尋、新增、編輯測試，但不會改到正式系統的產品資料。</div>
+    </section>
+  </main>
+
+  <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <form id="form" class="modal">
+      <h2 id="modalTitle">新增產品</h2>
+      <div class="hint">料號不能與既有產品重複。</div>
+      <label for="partNumber">料號</label><input id="partNumber" required autocomplete="off" placeholder="例如：6002AJ363010">
+      <label for="basePeople">基本人數</label><input id="basePeople" type="number" min="0" required>
+      <label for="screwAdd">拆螺絲＋</label><input id="screwAdd" type="number" min="0" required>
+      <div class="modal-actions"><button id="delete" class="danger" type="button">刪除</button><div class="right-actions"><button id="cancel" class="secondary" type="button">取消</button><button class="primary" type="submit">儲存產品</button></div></div>
+    </form>
+  </div>
+
+  <script>
+    const defaults=[
+      {id:'p1',name:'260mm',base:39,screwAdd:2},{id:'p2',name:'310mm',base:39,screwAdd:2},{id:'p3',name:'13吋',base:36,screwAdd:0},{id:'p4',name:'200mm',base:36,screwAdd:0},{id:'p5',name:'410mm',base:37,screwAdd:1},{id:'p6',name:'410MM沒螺絲',base:37,screwAdd:0},{id:'p7',name:'面板－條龍',base:34,screwAdd:0},{id:'p8',name:'一般作業',base:33,screwAdd:0}
+    ];
+    const $=id=>document.getElementById(id);const esc=s=>String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    const saved=JSON.parse(localStorage.getItem('manpowerV1Data')||'null');
+    let products=JSON.parse(JSON.stringify(saved?.products?.length?saved.products:defaults));
+    let editingId=null;
+    const sortProducts=()=>products.sort((a,b)=>String(a.name).localeCompare(String(b.name),'zh-Hant',{numeric:true,sensitivity:'base'}));
+    function render(){
+      sortProducts();
+      const query=$('search').value.trim().toLowerCase();
+      const visible=products.filter(p=>p.name.toLowerCase().includes(query));
+      $('count').textContent=query?`找到 ${visible.length} 筆／共 ${products.length} 筆產品`:`共 ${products.length} 筆產品`;
+      $('rows').innerHTML=visible.length?visible.map(p=>`<div class="row"><span class="product-name">${esc(p.name)}</span><span class="number">${Number(p.base)||0}</span><span class="number">${Number(p.screwAdd)||0}</span><button class="secondary" type="button" data-edit="${esc(p.id)}">編輯</button></div>`).join(''):'<div class="empty">找不到符合的料號</div>';
+    }
+    function openModal(id=null){
+      editingId=id;const product=id?products.find(p=>p.id===id):null;
+      $('modalTitle').textContent=product?'編輯產品':'新增產品';
+      $('partNumber').value=product?.name||'';$('basePeople').value=product?.base??0;$('screwAdd').value=product?.screwAdd??0;
+      $('delete').style.visibility=product?'visible':'hidden';$('overlay').classList.add('show');setTimeout(()=>$('partNumber').focus(),0);
+    }
+    function closeModal(){$('overlay').classList.remove('show');editingId=null;}
+    $('search').oninput=render;$('add').onclick=()=>openModal();
+    $('rows').onclick=e=>{const button=e.target.closest('[data-edit]');if(button)openModal(button.dataset.edit)};
+    $('cancel').onclick=closeModal;$('overlay').onclick=e=>{if(e.target===$('overlay'))closeModal()};
+    $('form').onsubmit=e=>{
+      e.preventDefault();const name=$('partNumber').value.trim();if(!name)return;
+      if(products.some(p=>p.name.toLowerCase()===name.toLowerCase()&&p.id!==editingId)){alert('這個料號已經存在');return}
+      const payload={id:editingId||`sample-${Date.now()}`,name,base:Math.max(0,Number($('basePeople').value)||0),screwAdd:Math.max(0,Number($('screwAdd').value)||0)};
+      if(editingId){Object.assign(products.find(p=>p.id===editingId),payload)}else products.push(payload);
+      closeModal();render();
+    };
+    $('delete').onclick=()=>{const product=products.find(p=>p.id===editingId);if(product&&confirm(`確定刪除「${product.name}」？`)){products=products.filter(p=>p.id!==editingId);closeModal();render()}};
+    render();
+  </script>
+</body>
+</html>
