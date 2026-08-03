@@ -141,6 +141,7 @@
       <label data-i18n="queryDate">查詢日期</label><input id="queryDate" type="date">
       <label data-i18n="productSearch">搜尋產品名稱</label><input id="product" type="search" list="productOptions" autocomplete="off" placeholder="輸入產品名稱搜尋"><datalist id="productOptions"></datalist>
       <div id="quickAddProductWrap" class="mode-hidden" style="margin-top:9px"><button id="quickAddProduct" class="secondary" type="button">＋ 新增產品</button><div class="hint" style="margin-top:6px">可直接新增產品名稱與基本需求人數，儲存後會自動選取。</div></div>
+      <div id="assemblyNeedPreview" class="notice mode-hidden" style="margin-top:12px"></div>
       <div class="normal-only"><label data-i18n="washMode">洗料模式</label>
         <div class="choice"><label><input type="radio" name="wash" value="1" checked><span data-i18n="washOne">洗1個</span></label><label><input type="radio" name="wash" value="2"><span data-i18n="washTwo">洗2個</span></label></div>
         <label data-i18n="specialProcess">特殊製程</label>
@@ -636,6 +637,7 @@ function renderCalc(){
  renderEmployeeListOnly();
  renderOvertimeList();
  renderLeaves();
+ updateAssemblyNeedPreview();
 }
 function renderLeaves(){
  const leaves=loadLeaves();
@@ -723,7 +725,7 @@ function saveProductModal(){
  const shouldSelectProduct=selectProductAfterSave;
  const payload={id:editingProductId||`p${Date.now()}`,name,base:Math.max(0,Number($('productModalBase').value)||0),screwAdd:Math.max(0,Number($('productModalScrew').value)||0)};
  if(editingProductId)Object.assign(data.products.find(p=>p.id===editingProductId),payload);else data.products.push(payload);
- sortProducts();persist();closeProductModal();renderSettings();renderCalc();if(shouldSelectProduct){$('product').value=name;renderOvertimeList();}showToast(tr('productSaved'));
+ sortProducts();persist();closeProductModal();renderSettings();renderCalc();if(shouldSelectProduct){$('product').value=name;renderOvertimeList();updateAssemblyNeedPreview();}showToast(tr('productSaved'));
 }
 function deleteModalProduct(){
  const product=data.products.find(p=>p.id===editingProductId);if(!product||!confirm(tr('confirmDelete')))return;
@@ -821,6 +823,7 @@ function setCalcMode(mode){
  document.querySelectorAll('.normal-only').forEach(item=>item.classList.toggle('mode-hidden',!normal));
  $('overtimeWork').classList.toggle('mode-hidden',normal);
  $('quickAddProductWrap').classList.toggle('mode-hidden',mode!=='assembly');
+ $('assemblyNeedPreview').classList.toggle('mode-hidden',mode!=='assembly');
  $('result').classList.remove('show');$('overtimeResult').classList.remove('show');
  if(normal){$('calcModeHint').textContent='目前是一般人力計算：保留原本的請假與人力試算。';return;}
  const all=mode==='all';
@@ -830,6 +833,12 @@ function setCalcMode(mode){
  $('calculateOvertime').textContent=all?'計算全體加班人數':'計算組裝加班人力';
  $('overtimeManualLabel').textContent=all?'勾選不加班':'勾選加班';
  renderOvertimeList();
+ updateAssemblyNeedPreview();
+}
+function updateAssemblyNeedPreview(){
+ const box=$('assemblyNeedPreview');if(!box||calcMode!=='assembly')return;
+ const product=data.products.find(item=>item.name===$('product').value.trim());
+ box.innerHTML=product?`<strong>第 1 步：${esc(product.name)} 需要 ${Number(product.base)||0} 位組裝人員。</strong><br>第 2 步：請往下勾選今晚要加班的人，系統會自動算還差幾人。`:'<strong>請先搜尋或新增產品名稱。</strong><br>選好產品後，這裡會顯示所需組裝人數。';
 }
 function calcOvertime(){
  const p=data.products.find(x=>x.name===$('product').value.trim());if(!p){alert('請從搜尋結果選擇正確產品名稱');return}
@@ -1102,7 +1111,7 @@ $('calculate').onclick=calc;
 $('calculateOvertime').onclick=calcOvertime;
 $('quickAddProduct').onclick=()=>openProductModal(null,true);
 $('overtimeEmployeeList').onchange=renderOvertimeSelectedSummary;
-$('product').oninput=renderOvertimeSelectedSummary;
+$('product').oninput=()=>{renderOvertimeSelectedSummary();updateAssemblyNeedPreview();};
 document.querySelectorAll('[data-calc-mode]').forEach(button=>button.onclick=()=>setCalcMode(button.dataset.calcMode));
 $('queryDate').onchange=()=>{lastResult=null;$('result').classList.remove('show');renderCalc();};
 $('langSwitch').onclick=()=>{lang=lang==='zh'?'vi':'zh';localStorage.setItem('manpowerV1Lang',lang);scheduleCloudUpload();applyLanguage();showToast(tr('saved'))};
