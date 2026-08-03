@@ -19,6 +19,7 @@
     button.primary{width:100%;border:0;border-radius:14px;background:#111827;color:#fff;padding:15px;font-size:17px;font-weight:800;margin-top:12px}.secondary{border:1px solid #d1d5db;background:#fff;border-radius:10px;padding:9px 12px;font-weight:700}.danger{border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:9px;padding:7px 9px}
     .result{display:none}.result.show{display:block}.big{font-size:42px;font-weight:900;text-align:center;margin:4px 0}.status{text-align:center;font-weight:800;margin-bottom:15px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat{border:1px solid var(--line);border-radius:12px;padding:12px}.stat small{color:var(--muted);display:block}.stat strong{font-size:22px}.full{grid-column:1/-1}
     .settings-row{display:grid;grid-template-columns:1fr 90px 78px 36px;gap:7px;align-items:center;margin:8px 0}.settings-row.employee{grid-template-columns:minmax(0,1fr) 90px 36px}.settings-row input,.settings-row select{padding:9px;font-size:14px}
+    .product-tools{display:grid;grid-template-columns:1fr auto;gap:9px;margin:14px 0 8px}.product-tools .secondary{white-space:nowrap}.product-count{font-size:13px;color:var(--muted);margin:7px 0}.product-list{border:1px solid var(--line);border-radius:14px;overflow:auto;max-height:430px}.product-list-head,.product-row{display:grid;grid-template-columns:minmax(0,1fr) 82px 82px 62px;gap:7px;align-items:center}.product-list-head{position:sticky;top:0;z-index:1;background:#f8fafc;color:var(--muted);font-size:12px;font-weight:800;padding:10px;border-bottom:1px solid var(--line)}.product-row{padding:10px;border-bottom:1px solid var(--line)}.product-row:last-child{border-bottom:0}.product-code{font-weight:800;overflow-wrap:anywhere}.product-row .secondary{padding:8px 6px;font-size:13px}.product-empty{padding:28px;text-align:center;color:var(--muted)}.product-modal-overlay{display:none;position:fixed;inset:0;z-index:10000;background:rgba(17,24,39,.48);padding:18px;align-items:center;justify-content:center}.product-modal-overlay.show{display:flex}.product-modal{width:min(100%,440px);background:#fff;border-radius:18px;padding:18px;box-shadow:0 16px 44px rgba(0,0,0,.23)}.product-modal h2{margin-bottom:3px}.product-modal label{font-size:14px;margin:16px 0 7px}.product-modal-actions{display:flex;justify-content:space-between;gap:8px;margin-top:18px}.product-modal-right{display:flex;gap:8px;margin-left:auto}.product-modal-right .primary{width:auto;padding:9px 12px}
     .settings-category-title{font-weight:900;font-size:14px;margin:16px 0 7px;padding:8px 10px;border-radius:10px;background:#f3f4f6}
     .settings-row.employee.paint{background:#e5e7eb;border-radius:12px;padding:7px}
     .emp.paint{background:#f3f4f6;border-color:#d1d5db}
@@ -46,6 +47,11 @@
   .settings-row.employee{
     grid-template-columns:minmax(0,1fr) 82px 32px;
   }
+  .product-tools{grid-template-columns:1fr}
+  .product-tools .secondary{width:100%}
+  .product-list-head,.product-row{grid-template-columns:minmax(0,1fr) 58px 58px 52px;gap:5px;padding-left:8px;padding-right:8px}
+  .product-list-head{font-size:11px}.product-row .secondary{padding:8px 2px;font-size:12px}
+  .product-modal-actions{flex-wrap:wrap}.product-modal-right{width:100%;margin-left:0}.product-modal-right button{flex:1}
 
   /* 日期區間請假：手機版改成較寬鬆的兩層排列 */
   .leave-row{
@@ -206,9 +212,9 @@
     <div class="card">
       <h2 data-i18n="productSettings">產品需求設定</h2>
       <div class="hint" data-i18n="productHint">基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。</div>
-      <div id="productSettings"></div>
-      <button id="addProduct" class="secondary" data-i18n="addProduct">新增產品</button>
-      <button id="saveProducts" class="primary" data-i18n="saveProducts">儲存產品設定</button>
+      <div class="product-tools"><input id="productSettingsSearch" type="search" data-i18n-placeholder="productSearchPlaceholder" placeholder="搜尋料號"><button id="addProduct" class="secondary" data-i18n="addProduct">新增產品</button></div>
+      <div id="productCount" class="product-count"></div>
+      <div class="product-list"><div class="product-list-head"><span data-i18n="partNumber">料號</span><span data-i18n="basePeople">基本人數</span><span data-i18n="screwAdd">拆螺絲＋</span><span data-i18n="action">操作</span></div><div id="productSettings"></div></div>
     </div>
     <div class="card">
       <h2 data-i18n="specialRules">特殊規則</h2>
@@ -224,6 +230,16 @@
     </div>
   </section>
 
+</div>
+<div id="productModal" class="product-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
+  <form id="productForm" class="product-modal">
+    <h2 id="productModalTitle">新增產品</h2>
+    <div class="hint" data-i18n="partNumberHint">料號不能與既有產品重複。</div>
+    <label for="productModalName" data-i18n="partNumber">料號</label><input id="productModalName" required autocomplete="off" data-i18n-placeholder="partNumberExample" placeholder="例如：6002AJ363010">
+    <label for="productModalBase" data-i18n="basePeople">基本人數</label><input id="productModalBase" type="number" min="0" required>
+    <label for="productModalScrew" data-i18n="screwAdd">拆螺絲＋</label><input id="productModalScrew" type="number" min="0" required>
+    <div class="product-modal-actions"><button id="deleteModalProduct" class="danger" type="button" data-i18n="delete">刪除</button><div class="product-modal-right"><button id="cancelProductModal" class="secondary" type="button" data-i18n="cancel">取消</button><button class="primary" type="submit" style="margin-top:0" data-i18n="saveProduct">儲存產品</button></div></div>
+  </form>
 </div>
 <div id="toast" class="toast">儲存成功</div>
 <script>
@@ -456,7 +472,7 @@ const translations={
     calculate:'開始計算',resultTitle:'計算結果',studentsNeeded:'還需要學生',todayNeed:'今日需求',formalTotal:'正式員工總數',
     leaveCount:'全部請假人數',formalPresent:'正式員工實到',productionTotal:'一般作業員總數',paintTotal:'烤漆人員總數',productionPresent:'一般作業員實到',paintPresent:'烤漆人員實到',conditions:'計算條件',saveToday:'儲存所選日期人力',
     storageNotice:'所有設定會儲存在這台裝置的瀏覽器中。',productSettings:'產品需求設定',
-    productHint:'基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。',addProduct:'新增產品',saveProducts:'儲存產品設定',productSaved:'產品設定已儲存成功！',
+    productHint:'基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。',addProduct:'新增產品',saveProducts:'儲存產品設定',productSaved:'產品設定已儲存成功！',productSearchPlaceholder:'搜尋料號',partNumber:'料號',action:'操作',edit:'編輯',cancel:'取消',saveProduct:'儲存產品',productAddTitle:'新增產品',productEditTitle:'編輯產品',partNumberHint:'料號不能與既有產品重複。',partNumberExample:'例如：6002AJ363010',duplicatePartNumber:'這個料號已經存在',emptyProductSearch:'找不到符合的料號',productCount:n=>`共 ${n} 筆產品`,productFoundCount:(shown,total)=>`找到 ${shown} 筆／共 ${total} 筆產品`,
     specialRules:'特殊規則',washTwoAdd:'洗2個增加人數',jubaoAdd:'巨堡印刷增加人數',saveRules:'儲存規則',
     employeeListTitle:'正式員工名單',addEmployee:'新增員工',saveEmployees:'儲存員工名單',employeeCategory:'分類',category1F:'1F',category2F:'2F',categoryPaint:'烤漆',
     clearRecords:'清除全部紀錄',emptyLeave:'尚未設定區間請假',rangeTag:'（區間請假）',
@@ -478,7 +494,7 @@ const translations={
     calculate:'Bắt đầu tính',resultTitle:'Kết quả tính',studentsNeeded:'Số sinh viên cần thêm',todayNeed:'Nhu cầu hôm nay',formalTotal:'Tổng nhân viên chính thức',
     leaveCount:'Tổng số người nghỉ',formalPresent:'Nhân viên chính thức có mặt',productionTotal:'Tổng nhân viên sản xuất',paintTotal:'Tổng nhân viên sơn',productionPresent:'Nhân viên sản xuất có mặt',paintPresent:'Nhân viên sơn có mặt',conditions:'Điều kiện tính',saveToday:'Lưu nhân lực ngày đã chọn',
     storageNotice:'Mọi cài đặt được lưu trong trình duyệt của thiết bị này.',productSettings:'Cài đặt nhu cầu sản phẩm',
-    productHint:'Nhu cầu cơ bản lấy mốc: rửa 1 bộ, không Jubao, không tháo vít.',addProduct:'Thêm sản phẩm',saveProducts:'Lưu cài đặt sản phẩm',productSaved:'Đã lưu cài đặt sản phẩm thành công!',
+    productHint:'Nhu cầu cơ bản lấy mốc: rửa 1 bộ, không Jubao, không tháo vít.',addProduct:'Thêm sản phẩm',saveProducts:'Lưu cài đặt sản phẩm',productSaved:'Đã lưu cài đặt sản phẩm thành công!',productSearchPlaceholder:'Tìm mã sản phẩm',partNumber:'Mã sản phẩm',action:'Thao tác',edit:'Sửa',cancel:'Hủy',saveProduct:'Lưu sản phẩm',productAddTitle:'Thêm sản phẩm',productEditTitle:'Sửa sản phẩm',partNumberHint:'Mã sản phẩm không được trùng với sản phẩm có sẵn.',partNumberExample:'Ví dụ: 6002AJ363010',duplicatePartNumber:'Mã sản phẩm này đã tồn tại',emptyProductSearch:'Không tìm thấy mã sản phẩm phù hợp',productCount:n=>`Tổng ${n} sản phẩm`,productFoundCount:(shown,total)=>`Tìm thấy ${shown}/${total} sản phẩm`,
     specialRules:'Quy tắc đặc biệt',washTwoAdd:'Số người tăng khi rửa 2 bộ',jubaoAdd:'Số người tăng khi in Jubao',saveRules:'Lưu quy tắc',
     employeeListTitle:'Danh sách nhân viên chính thức',addEmployee:'Thêm nhân viên',saveEmployees:'Lưu danh sách nhân viên',employeeCategory:'Phân loại',category1F:'1F',category2F:'2F',categoryPaint:'Sơn',
     clearRecords:'Xóa toàn bộ lịch sử',emptyLeave:'Chưa cài đặt nghỉ theo khoảng ngày',rangeTag:'（nghỉ theo khoảng ngày）',
@@ -498,6 +514,7 @@ function tr(key,...args){
 function applyLanguage(){
   document.documentElement.lang=lang==='vi'?'vi':'zh-Hant';
   document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=tr(el.dataset.i18n)});
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{el.placeholder=tr(el.dataset.i18nPlaceholder)});
   $('langSwitch').textContent=lang==='zh'?'VI':'中文';
   document.title=`${tr('appTitle')} V2.1.7`;
   renderCalc();
@@ -608,8 +625,10 @@ function saveLeaveInputs(){
  saveLeaves(arr);
 }
 function renderSettings(){
- $('productSettings').innerHTML=data.products.map((p,i)=>`<div class="settings-row"><input data-pname="${i}" value="${esc(p.name)}"><input data-pbase="${i}" type="number" min="0" value="${p.base}"><input data-pscrew="${i}" type="number" min="0" value="${p.screwAdd}"><button type="button" class="danger" onclick="deleteProduct(${i})" aria-label="刪除">×</button></div>`).join('')+
- `<div class="settings-row hint"><span>${tr('productName')}</span><span>${tr('basePeople')}</span><span>${tr('screwAdd')}</span><span></span></div>`;
+ const query=$('productSettingsSearch').value.trim().toLowerCase();
+ const visible=[...data.products].sort((a,b)=>String(a.name).localeCompare(String(b.name),'zh-Hant',{numeric:true,sensitivity:'base'})).filter(p=>String(p.name).toLowerCase().includes(query));
+ $('productCount').textContent=query?tr('productFoundCount',visible.length,data.products.length):tr('productCount',data.products.length);
+ $('productSettings').innerHTML=visible.length?visible.map(p=>`<div class="product-row"><span class="product-code">${esc(p.name)}</span><span>${Number(p.base)||0}</span><span>${Number(p.screwAdd)||0}</span><button type="button" class="secondary" data-product-edit="${esc(p.id)}">${tr('edit')}</button></div>`).join(''):`<div class="product-empty">${tr('emptyProductSearch')}</div>`;
  $('wash2Add').value=data.rules.wash2Add;$('jubaoAdd').value=data.rules.jubaoAdd;
  const employeeGroups=['1F','2F','烤漆'];
  $('employeeSettings').innerHTML=employeeGroups.map(group=>{
@@ -636,20 +655,6 @@ function updateResultText(){
  $('conditions').textContent=`${lastResult.product}｜${tr('washCondition',lastResult.wash)}${lastResult.jubao?`｜${tr('jubaoShort')}`:''}${lastResult.screw?`｜${tr('screwShort')}`:''}`;
 }
 
-function syncProductInputs(){
-  document.querySelectorAll('[data-pname]').forEach(x=>{
-    const i=Number(x.dataset.pname);
-    if(data.products[i])data.products[i].name=x.value.trim()||tr('unnamed');
-  });
-  document.querySelectorAll('[data-pbase]').forEach(x=>{
-    const i=Number(x.dataset.pbase);
-    if(data.products[i])data.products[i].base=Math.max(0,Number(x.value)||0);
-  });
-  document.querySelectorAll('[data-pscrew]').forEach(x=>{
-    const i=Number(x.dataset.pscrew);
-    if(data.products[i])data.products[i].screwAdd=Math.max(0,Number(x.value)||0);
-  });
-}
 function syncEmployeeInputs(){
   const inputs=[...document.querySelectorAll('[data-ename]')];
   if(!inputs.length)return;
@@ -671,15 +676,27 @@ function syncEmployeeInputs(){
   data.employeeCategories={};
   data.employees.forEach(name=>data.employeeCategories[name]=nextCategories[name]||'1F');
 }
-function deleteProduct(index){
-  syncProductInputs();
-  if(!Number.isInteger(index)||!data.products[index])return;
-  if(!confirm(tr('confirmDelete')))return;
-  data.products.splice(index,1);
-  persist();
-  renderSettings();
-  renderCalc();
-  showToast(tr('deleted'));
+let editingProductId=null;
+function sortProducts(){data.products.sort((a,b)=>String(a.name).localeCompare(String(b.name),'zh-Hant',{numeric:true,sensitivity:'base'}))}
+function openProductModal(id=null){
+ editingProductId=id;
+ const product=id?data.products.find(p=>p.id===id):null;
+ $('productModalTitle').textContent=product?tr('productEditTitle'):tr('productAddTitle');
+ $('productModalName').value=product?.name||'';$('productModalBase').value=product?.base??0;$('productModalScrew').value=product?.screwAdd??0;
+ $('deleteModalProduct').style.visibility=product?'visible':'hidden';
+ $('productModal').classList.add('show');setTimeout(()=>$('productModalName').focus(),0);
+}
+function closeProductModal(){$('productModal').classList.remove('show');editingProductId=null}
+function saveProductModal(){
+ const name=$('productModalName').value.trim();if(!name)return;
+ if(data.products.some(p=>String(p.name).toLowerCase()===name.toLowerCase()&&p.id!==editingProductId)){alert(tr('duplicatePartNumber'));return}
+ const payload={id:editingProductId||`p${Date.now()}`,name,base:Math.max(0,Number($('productModalBase').value)||0),screwAdd:Math.max(0,Number($('productModalScrew').value)||0)};
+ if(editingProductId)Object.assign(data.products.find(p=>p.id===editingProductId),payload);else data.products.push(payload);
+ sortProducts();persist();closeProductModal();renderSettings();renderCalc();showToast(tr('productSaved'));
+}
+function deleteModalProduct(){
+ const product=data.products.find(p=>p.id===editingProductId);if(!product||!confirm(tr('confirmDelete')))return;
+ data.products=data.products.filter(p=>p.id!==editingProductId);persist();closeProductModal();renderSettings();renderCalc();showToast(tr('deleted'));
 }
 function deleteLeave(index){
   if(!Number.isInteger(index))return;
@@ -838,7 +855,7 @@ async function replaceTable(table,rows){
 async function uploadCloud(silent=false){
  if(!cloudReady||applyingRemote)return;
  try{
-  syncProductInputs();syncEmployeeInputs();
+  syncEmployeeInputs();
   const now=new Date().toISOString();
   const settings=[{id:'main',wash2_add:Number(data.rules.wash2Add)||0,jubao_add:Number(data.rules.jubaoAdd)||0,language:lang,updated_at:now}];
   const products=(data.products||[]).map((p,i)=>({id:String(p.id),name:p.name,base_people:Number(p.base)||0,screw_add:Number(p.screwAdd)||0,sort_order:i,updated_at:now}));
@@ -1039,20 +1056,14 @@ $('leaveSettings').onchange=()=>{
   showToast(tr('saved'));
 };
 
-$('addProduct').onclick=()=>{
- syncProductInputs();
- data.products.push({id:'p'+Date.now(),name:tr('newProduct'),base:0,screwAdd:0});
- renderSettings();
- showToast(tr('added'));
-};
-$('saveProducts').onclick=()=>{
- syncProductInputs();
- persist();
- renderSettings();
- renderCalc();
- showToast(tr('productSaved'));
-};
-$('saveRules').onclick=()=>{syncProductInputs();data.rules.wash2Add=Math.max(0,+$('wash2Add').value||0);data.rules.jubaoAdd=Math.max(0,+$('jubaoAdd').value||0);persist();renderSettings();renderCalc();showToast(tr('saved'))};
+$('addProduct').onclick=()=>openProductModal();
+$('productSettingsSearch').oninput=renderSettings;
+$('productSettings').onclick=e=>{const button=e.target.closest('[data-product-edit]');if(button)openProductModal(button.dataset.productEdit)};
+$('cancelProductModal').onclick=closeProductModal;
+$('productModal').onclick=e=>{if(e.target===$('productModal'))closeProductModal()};
+$('productForm').onsubmit=e=>{e.preventDefault();saveProductModal()};
+$('deleteModalProduct').onclick=deleteModalProduct;
+$('saveRules').onclick=()=>{data.rules.wash2Add=Math.max(0,+$('wash2Add').value||0);data.rules.jubaoAdd=Math.max(0,+$('jubaoAdd').value||0);persist();renderSettings();renderCalc();showToast(tr('saved'))};
 $('addEmployee').onclick=()=>{syncEmployeeInputs();let base=tr('newEmployee'),name=base,n=2;while(data.employees.includes(name))name=`${base}${n++}`;data.employees.push(name);data.employeeCategories??={};data.employeeCategories[name]='1F';persist();renderSettings();renderCalc();showToast(tr('added'))};
 $('saveEmployees').onclick=()=>{syncEmployeeInputs();persist();renderSettings();renderCalc();showToast(tr('saved'))};
 $('queryDate').value=todayISO();
