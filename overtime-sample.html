@@ -27,16 +27,16 @@
           <button class="mode-btn" type="button" data-mode="assembly">組裝加班</button>
         </div>
         <div id="modeHint" class="hint" style="margin-top:8px">全體加班：可勾選 1F、2F、烤漆不加班人員。</div>
-        <label for="product">搜尋料號</label><input id="product" type="search" list="productOptions" autocomplete="off" placeholder="輸入料號搜尋"><datalist id="productOptions"></datalist>
+        <div id="productField"><label for="product">搜尋料號</label><input id="product" type="search" list="productOptions" autocomplete="off" placeholder="輸入料號搜尋"><datalist id="productOptions"></datalist></div>
         <label id="peopleLabel">今晚不加班的人（可複選）</label>
         <div id="people" class="people"></div>
         <button id="calculate" class="primary" type="button">計算晚上加班人數</button>
         <div id="result" class="result">
-          <div class="status">晚上還需要學生</div>
+          <div id="resultTitle" class="status">晚上還需要學生</div>
           <div id="missing" class="big">0 人</div>
           <div id="status" class="status"></div>
           <div class="stats">
-            <div class="stat"><small>晚上所需組裝人數</small><strong id="need">0</strong> 人</div>
+            <div id="needStat" class="stat"><small>晚上所需組裝人數</small><strong id="need">0</strong> 人</div>
             <div class="stat"><small>可加班 1F</small><strong id="available1F">0</strong> 人</div>
             <div class="stat"><small>可加班 2F</small><strong id="available2F">0</strong> 人</div>
             <div class="stat"><small id="paintLabel">可加班烤漆</small><strong id="availablePaint">0</strong> 人</div>
@@ -45,7 +45,7 @@
           </div>
         </div>
       </div>
-      <p class="note">全體加班會顯示 1F／2F／烤漆；組裝加班只顯示 1F／2F。學生缺額只依 1F＋2F 組裝人力計算。</p>
+      <p class="note">全體加班會顯示 1F／2F／烤漆；組裝加班也會列入烤漆（噴漆）人員。學生缺額只依 1F＋2F 組裝人力計算。</p>
     </section>
   </main>
   <script>
@@ -67,7 +67,8 @@
       const currentProduct=$('product').value;
       $('productOptions').innerHTML=(data.products||[]).map(p=>`<option value="${esc(p.name)}"></option>`).join('');
       $('product').value=(data.products||[]).some(p=>p.name===currentProduct)?currentProduct:((data.products||[])[0]?.name||'');
-      const groups=overtimeMode==='all'?[['1F','1F','one'],['2F','2F','two'],['烤漆','烤漆','paint']]:[['1F','1F','one'],['2F','2F','two']];
+      $('productField').style.display=overtimeMode==='all'?'block':'none';
+      const groups=[['1F','1F','one'],['2F','2F','two'],['烤漆','烤漆／噴漆','paint']];
       const markup=groups.map(([id,title,style])=>{
         const people=(data.employees||[]).filter(name=>category(name)===id);
         if(!people.length)return '';
@@ -76,28 +77,30 @@
       $('people').innerHTML=markup||'<div class="hint">尚未讀到正式員工資料，請先到正式系統設定員工。</div>';
     }
     function calculate(){
-      const product=(data.products||[]).find(p=>p.name===$('product').value.trim());if(!product){alert('請從搜尋結果選擇正確料號');return}
-      const includedGroups=overtimeMode==='all'?['1F','2F','烤漆']:['1F','2F'];
+      const all=overtimeMode==='all';
+      const product=all?(data.products||[]).find(p=>p.name===$('product').value.trim()):null;if(all&&!product){alert('請從搜尋結果選擇正確料號');return}
+      const includedGroups=['1F','2F','烤漆'];
       const staff=(data.employees||[]).filter(name=>includedGroups.includes(category(name)));
       const manual=new Set([...document.querySelectorAll('#people input:checked')].map(x=>x.value));
       const temp=tempAbsence(),range=rangeLeaveNames();
       const automatic=new Set(staff.filter(name=>range.has(name)||temp[name]==='pm'||temp[name]==='full'));
-      const unavailable=overtimeMode==='all'?new Set([...manual,...automatic]):automatic;
-      const availableFor=group=>staff.filter(name=>category(name)===group&&(overtimeMode==='all'?!unavailable.has(name):manual.has(name)&&!automatic.has(name))).length;
+      const unavailable=all?new Set([...manual,...automatic]):automatic;
+      const availableFor=group=>staff.filter(name=>category(name)===group&&(all?!unavailable.has(name):manual.has(name)&&!automatic.has(name))).length;
       const available1F=availableFor('1F'),available2F=availableFor('2F'),availablePaint=availableFor('烤漆');
-      const availableAssembly=available1F+available2F,need=Number(product.base)||0,missing=Math.max(0,need-availableAssembly);
-      $('need').textContent=need;$('available1F').textContent=available1F;$('available2F').textContent=available2F;$('availablePaint').textContent=availablePaint;$('paintLabel').textContent=overtimeMode==='all'?'可加班烤漆':'烤漆（未列入）';$('automatic').textContent=automatic.size;$('manualLabel').textContent=overtimeMode==='all'?'勾選不加班':'勾選加班';$('manual').textContent=[...manual].filter(name=>!automatic.has(name)).length;
-      $('missing').textContent=`${missing} 人`;$('missing').style.color=missing?'var(--bad)':'var(--ok)';
-      $('status').textContent=missing?`晚上還需要 ${missing} 位學生`:'晚上人力足夠，不需要學生';$('status').style.color=missing?'var(--bad)':'var(--ok)';$('result').classList.add('show');
+      const availableAssembly=available1F+available2F,selectedTotal=availableAssembly+availablePaint,need=all?(Number(product.base)||0):0,missing=all?Math.max(0,need-availableAssembly):0;
+      $('need').textContent=need;$('needStat').style.display=all?'block':'none';$('available1F').textContent=available1F;$('available2F').textContent=available2F;$('availablePaint').textContent=availablePaint;$('paintLabel').textContent='可加班烤漆／噴漆';$('automatic').textContent=automatic.size;$('manualLabel').textContent=all?'勾選不加班':'勾選加班';$('manual').textContent=[...manual].filter(name=>!automatic.has(name)).length;
+      $('resultTitle').textContent=all?'晚上還需要學生':'組裝加班總人數';
+      $('missing').textContent=all?`${missing} 人`:`${selectedTotal} 人`;$('missing').style.color=all&&missing?'var(--bad)':'var(--ok)';
+      $('status').textContent=all?(missing?`晚上還需要 ${missing} 位學生`:'晚上人力足夠，不需要學生'):`已勾選 ${selectedTotal} 位人員加班（含烤漆／噴漆）`;$('status').style.color=all&&missing?'var(--bad)':'var(--ok)';$('result').classList.add('show');notifyEmbedHeight();
     }
     $('overtimeToggle').onclick=()=>{const open=$('overtimePanel').classList.toggle('show');$('overtimeToggle').classList.toggle('open',open);$('overtimeToggle').textContent=open?'收起晚上加班':'晚上加班';notifyEmbedHeight()};
     document.querySelectorAll('.mode-btn').forEach(button=>button.onclick=()=>{
       overtimeMode=button.dataset.mode;
       document.querySelectorAll('.mode-btn').forEach(item=>item.classList.toggle('active',item===button));
       const all=overtimeMode==='all';
-      $('modeHint').textContent=all?'全體加班：勾選今晚不加班的人，其他人視為加班。':'組裝加班：只顯示 1F、2F，請直接勾選今晚要加班的人。';
+      $('modeHint').textContent=all?'全體加班：勾選今晚不加班的人，其他人視為加班。':'組裝加班：顯示 1F、2F、烤漆（噴漆），請直接勾選今晚要加班的人。';
       $('peopleLabel').textContent=all?'今晚不加班的人（可複選）':'今晚要加班的人（可複選）';
-      $('manualLabel').textContent=all?'勾選不加班':'勾選加班';
+      $('manualLabel').textContent=all?'勾選不加班':'勾選加班';$('calculate').textContent=all?'計算晚上加班人數':'統計組裝加班人數';$('resultTitle').textContent=all?'晚上還需要學生':'組裝加班總人數';$('needStat').style.display=all?'block':'none';
       $('result').classList.remove('show');
       render();
       notifyEmbedHeight();
