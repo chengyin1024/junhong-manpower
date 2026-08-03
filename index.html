@@ -10,6 +10,7 @@
     *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
     .app{max-width:760px;margin:auto;padding:14px 14px 90px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}.top h1{font-size:22px;margin:0}.top-actions{display:flex;align-items:center;gap:7px}.lang-btn{border:1px solid #d1d5db;background:#fff;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800}.tag{font-size:12px;background:#e5e7eb;padding:5px 9px;border-radius:999px}
     .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 6px;font-weight:700}.tab.active{background:var(--accent);color:#fff}.tab-link{display:block;color:var(--text);text-align:center;text-decoration:none}
+    .embedded-tool{display:block;width:100%;min-height:900px;border:0;border-radius:16px;background:var(--bg)}
     .panel{display:none}.panel.active{display:block}.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
     h2{font-size:17px;margin:0 0 14px}label{display:block;font-weight:700;margin:12px 0 7px}.hint{font-size:13px;color:var(--muted)}
     select,input[type=number],input[type=text],input[type=search],input[type=date]{width:100%;padding:13px 12px;border:1px solid #d1d5db;border-radius:12px;font-size:16px;background:#fff}
@@ -127,8 +128,8 @@
   <div class="tabs">
     <button class="tab active" data-tab="calc" data-i18n="tabCalc">人力計算</button>
     <button class="tab" data-tab="settings" data-i18n="tabSettings">設定</button>
-    <a class="tab tab-link" href="overtime-sample.html" data-i18n="nightOvertime">晚上加班</a>
-    <a class="tab tab-link" href="saturday-overtime-sample.html" data-i18n="saturdayOvertime">星期六加班</a>
+    <button class="tab" data-tab="nightOvertime" data-i18n="nightOvertime">晚上加班</button>
+    <button class="tab" data-tab="saturdayOvertime" data-i18n="saturdayOvertime">星期六加班</button>
   </div>
 
   <section id="calc" class="panel active">
@@ -229,6 +230,9 @@
       <button id="saveEmployees" class="primary" data-i18n="saveEmployees">儲存員工名單</button>
     </div>
   </section>
+
+  <section id="nightOvertime" class="panel"><iframe id="nightOvertimeFrame" class="embedded-tool" title="晚上加班" src="overtime-sample.html?embedded=1"></iframe></section>
+  <section id="saturdayOvertime" class="panel"><iframe id="saturdayOvertimeFrame" class="embedded-tool" title="星期六加班" src="saturday-overtime-sample.html?embedded=1"></iframe></section>
 
 </div>
 <div id="productModal" class="product-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
@@ -1028,6 +1032,11 @@ function initCloudUI(){
 }
 
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');if(b.dataset.tab==='settings')renderSettings();if(b.dataset.tab==='records')renderRecords()});
+window.addEventListener('message',event=>{
+ if(event.origin!==location.origin||event.data?.source!=='junhong-manpower-embed')return;
+ const frame=event.data.page==='night'?$('nightOvertimeFrame'):event.data.page==='saturday'?$('saturdayOvertimeFrame'):null;
+ if(frame&&Number.isFinite(event.data.height))frame.style.height=`${Math.max(620,event.data.height+8)}px`;
+});
 $('calculate').onclick=calc;
 $('queryDate').onchange=()=>{lastResult=null;$('result').classList.remove('show');renderCalc();};
 $('langSwitch').onclick=()=>{lang=lang==='zh'?'vi':'zh';localStorage.setItem('manpowerV1Lang',lang);scheduleCloudUpload();applyLanguage();showToast(tr('saved'))};
