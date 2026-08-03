@@ -9,7 +9,7 @@
     :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--warn:#b45309;--bad:#b91c1c}
     *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
     .app{max-width:760px;margin:auto;padding:14px 14px 90px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}.top h1{font-size:22px;margin:0}.top-actions{display:flex;align-items:center;gap:7px}.lang-btn{border:1px solid #d1d5db;background:#fff;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800}.tag{font-size:12px;background:#e5e7eb;padding:5px 9px;border-radius:999px}
-    .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 6px;font-weight:700}.tab.active{background:var(--accent);color:#fff}.tab-link{display:block;color:var(--text);text-align:center;text-decoration:none}
+    .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 6px;font-weight:700}.tab.active{background:var(--accent);color:#fff}.tab-link{display:block;color:var(--text);text-align:center;text-decoration:none}.calc-mode{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.calc-mode button{border:1px solid #d1d5db;background:#fff;border-radius:12px;padding:12px 6px;font-weight:800;cursor:pointer}.calc-mode button.active{background:var(--accent);color:#fff;border-color:var(--accent)}.mode-hidden{display:none!important}
     .embedded-tool{display:block;width:100%;min-height:900px;border:0;border-radius:16px;background:var(--bg)}
     .panel{display:none}.panel.active{display:block}.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
     h2{font-size:17px;margin:0 0 14px}label{display:block;font-weight:700;margin:12px 0 7px}.hint{font-size:13px;color:var(--muted)}
@@ -128,26 +128,26 @@
   <div class="tabs">
     <button class="tab active" data-tab="calc" data-i18n="tabCalc">人力計算</button>
     <button class="tab" data-tab="settings" data-i18n="tabSettings">設定</button>
-    <button class="tab" data-tab="nightOvertime" data-i18n="nightOvertime">晚上加班</button>
     <button class="tab" data-tab="saturdayOvertime" data-i18n="saturdayOvertime">星期六加班</button>
   </div>
 
   <section id="calc" class="panel active">
     <div class="card">
-      <h2 data-i18n="todayConditions">生產條件</h2>
+      <h2>人力計算</h2>
+      <div class="hint">平常使用一般人力；需要晚上加班時，再選擇全體加班或組裝加班。</div>
+      <div class="calc-mode"><button type="button" class="active" data-calc-mode="normal">一般人力</button><button type="button" data-calc-mode="all">全體加班</button><button type="button" data-calc-mode="assembly">組裝加班</button></div>
+      <div id="calcModeHint" class="notice">目前是一般人力計算：保留原本的請假與人力試算。</div>
+      <h2 style="margin-top:16px" data-i18n="todayConditions">生產條件</h2>
       <label data-i18n="queryDate">查詢日期</label><input id="queryDate" type="date">
       <label data-i18n="productSearch">搜尋料號</label><input id="product" type="search" list="productOptions" autocomplete="off" placeholder="輸入料號搜尋"><datalist id="productOptions"></datalist>
-      <label data-i18n="washMode">洗料模式</label>
-      <div class="choice">
-        <label><input type="radio" name="wash" value="1" checked><span data-i18n="washOne">洗1個</span></label>
-        <label><input type="radio" name="wash" value="2"><span data-i18n="washTwo">洗2個</span></label>
-      </div>
-      <label data-i18n="specialProcess">特殊製程</label>
-      <label class="check"><input id="jubao" type="checkbox"><span data-i18n="jubaoPrint">巨堡印刷（裝箱增加1人）</span></label>
-      <label class="check"><input id="screw" type="checkbox"><span data-i18n="screwProcess">鎖螺絲／拆螺絲</span></label>
+      <div class="normal-only"><label data-i18n="washMode">洗料模式</label>
+        <div class="choice"><label><input type="radio" name="wash" value="1" checked><span data-i18n="washOne">洗1個</span></label><label><input type="radio" name="wash" value="2"><span data-i18n="washTwo">洗2個</span></label></div>
+        <label data-i18n="specialProcess">特殊製程</label>
+        <label class="check"><input id="jubao" type="checkbox"><span data-i18n="jubaoPrint">巨堡印刷（裝箱增加1人）</span></label>
+        <label class="check"><input id="screw" type="checkbox"><span data-i18n="screwProcess">鎖螺絲／拆螺絲</span></label></div>
     </div>
 
-    <div class="card">
+    <div class="card normal-only">
       <h2 data-i18n="tempLeave">臨時請假</h2>
       <div class="hint" data-i18n="tempLeaveHint">每個日期分別儲存。紅色代表所選日期請假。</div>
       <div id="manualSyncBar" style="margin-top:10px;padding:10px;border:1px solid #d9e2ef;border-radius:10px;background:#f8fafc">
@@ -164,16 +164,16 @@
       <button id="clearAbsence" class="secondary" style="margin-top:10px"><span data-i18n="clearTempLeave">清除所選日期臨時請假</span></button>
     </div>
 
-    <div class="card">
+    <div class="card normal-only">
       <h2 data-i18n="rangeLeave">日期區間請假</h2>
       <div class="hint" data-i18n="rangeLeaveHint">設定期間後會每天自動計入請假；結束日隔天自動恢復到班。</div>
       <div id="leaveSettings"></div>
       <button id="addLeave" class="secondary"><span data-i18n="addRangeLeave">新增區間請假</span></button>
     </div>
 
-    <button id="calculate" class="primary" data-i18n="calculate">開始計算</button>
+    <button id="calculate" class="primary normal-only" data-i18n="calculate">開始計算</button>
 
-    <div id="result" class="card result">
+    <div id="result" class="card result normal-only">
       <h2 data-i18n="resultTitle">計算結果</h2>
       <div class="status" style="margin-bottom:4px" data-i18n="studentsNeeded">還需要學生</div><div id="missingBig" class="big">0 人</div>
       <div id="statusText" class="status"></div>
@@ -186,6 +186,19 @@
         <div class="stat"><small data-i18n="paintPresent">烤漆人員實到</small><strong id="paintPresent">0</strong> 人</div>
         <div class="stat full"><small data-i18n="leaveCount">全部請假人數</small><strong id="absentCount">0</strong> 人</div>
         <div class="stat full"><small data-i18n="conditions">計算條件</small><strong id="conditions" style="font-size:16px"></strong></div>
+      </div>
+    </div>
+    <div id="overtimeWork" class="mode-hidden">
+      <div class="card">
+        <div id="overtimeHint" class="hint"></div>
+        <label id="overtimePeopleLabel">今晚不加班的人（可複選）</label>
+        <div id="overtimeEmployeeList" class="employee-sections" style="margin-top:10px"></div>
+        <button id="calculateOvertime" class="primary" type="button">計算全體加班人數</button>
+      </div>
+      <div id="overtimeResult" class="card result">
+        <h2 id="overtimeResultTitle">晚上還需要學生</h2>
+        <div id="overtimeMissingBig" class="big">0 人</div><div id="overtimeStatusText" class="status"></div>
+        <div class="stats"><div class="stat"><small>所需組裝人數</small><strong id="overtimeNeed">0</strong> 人</div><div class="stat"><small>可加班 1F</small><strong id="overtimeOne">0</strong> 人</div><div class="stat"><small>可加班 2F</small><strong id="overtimeTwo">0</strong> 人</div><div class="stat"><small>可加班烤漆／噴漆</small><strong id="overtimePaint">0</strong> 人</div><div class="stat"><small>自動扣除請假</small><strong id="overtimeAuto">0</strong> 人</div><div class="stat"><small id="overtimeManualLabel">勾選不加班</small><strong id="overtimeManual">0</strong> 人</div></div>
       </div>
     </div>
   </section>
@@ -231,7 +244,6 @@
     </div>
   </section>
 
-  <section id="nightOvertime" class="panel"><iframe id="nightOvertimeFrame" class="embedded-tool" title="晚上加班" src="overtime-sample.html?embedded=1"></iframe></section>
   <section id="saturdayOvertime" class="panel"><iframe id="saturdayOvertimeFrame" class="embedded-tool" title="星期六加班" src="saturday-overtime-sample.html?embedded=1"></iframe></section>
 
 </div>
@@ -335,7 +347,7 @@ migrateStoredData();
     persist();
   }
 })();
-let lastResult=null;
+let lastResult=null,calcMode='normal';
 function todayISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function selectedDate(){return $('queryDate')?.value||todayISO()}
 function normalizeTempLeaveType(type){
@@ -592,16 +604,16 @@ function renderEmployeeListOnly(){
  }).join('');
  list.innerHTML=priority+groups;
 }
-function renderNightOvertimeList(){
- const list=$('nightOvertimeList');if(!list)return;
- const selected=new Set(loadNightNoOvertime());
- const categoryClass=category=>category==='1F'?'category-1f':'category-2f';
- const groups=['1F','2F'].map(category=>{
-   const people=sortedEmployees().filter(x=>x.category===category);
-   if(!people.length)return '';
-   return `<section class="employee-section ${categoryClass(category)}"><h3 class="employee-section-title">${category}</h3><div class="employee-grid">${people.map(({name})=>`<label class="emp"><span class="emp-name">${esc(name)}</span><input type="checkbox" data-night-no-overtime="${esc(name)}" ${selected.has(name)?'checked':''}></label>`).join('')}</div></section>`;
+function renderOvertimeList(){
+ const list=$('overtimeEmployeeList');if(!list)return;
+ const temp=loadTempAbsence(),range=new Set(activeLeaveNames());
+ const categoryClass=category=>category==='1F'?'category-1f':category==='2F'?'category-2f':'category-paint';
+ const groups=['1F','2F','烤漆'].map(category=>{
+   const people=sortedEmployees().filter(x=>x.category===category);if(!people.length)return '';
+   const title=category==='烤漆'?'烤漆／噴漆':category;
+   return `<section class="employee-section ${categoryClass(category)}"><h3 class="employee-section-title">${title}</h3><div class="employee-grid">${people.map(({name})=>{const unavailable=range.has(name)||temp[name]==='pm'||temp[name]==='full';return `<label class="emp ${unavailable?'absent':''}"><span class="emp-name">${esc(name)}${unavailable?'（請假）':''}</span><input type="checkbox" data-overtime-name="${esc(name)}" ${unavailable?'disabled':''}></label>`}).join('')}</div></section>`;
  }).join('');
- list.innerHTML=groups||`<div class="empty">${tr('emptyRecords')}</div>`;
+ list.innerHTML=groups||`<div class="empty">尚未建立員工資料。</div>`;
 }
 function renderCalc(){
  const currentProduct=$('product')?.value;
@@ -609,7 +621,7 @@ function renderCalc(){
  $('productOptions').innerHTML=data.products.map(p=>`<option value="${esc(p.name)}"></option>`).join('');
  $('product').value=currentProduct&&data.products.some(p=>p.name===currentProduct)?currentProduct:(data.products[0]?.name||'');
  renderEmployeeListOnly();
- renderNightOvertimeList();
+ renderOvertimeList();
  renderLeaves();
 }
 function renderLeaves(){
@@ -785,6 +797,39 @@ function calc(){
  $('statusText').style.color=(missingMorning||missingAfternoon)?'var(--bad)':'var(--ok)';
  $('missingBig').style.color=(missingMorning||missingAfternoon)?'var(--bad)':'var(--ok)';
  $('result').classList.add('show');$('result').scrollIntoView({behavior:'smooth'});
+}
+
+function setCalcMode(mode){
+ calcMode=mode;
+ document.querySelectorAll('[data-calc-mode]').forEach(button=>button.classList.toggle('active',button.dataset.calcMode===mode));
+ const normal=mode==='normal';
+ document.querySelectorAll('.normal-only').forEach(item=>item.classList.toggle('mode-hidden',!normal));
+ $('overtimeWork').classList.toggle('mode-hidden',normal);
+ $('result').classList.remove('show');$('overtimeResult').classList.remove('show');
+ if(normal){$('calcModeHint').textContent='目前是一般人力計算：保留原本的請假與人力試算。';return;}
+ const all=mode==='all';
+ $('calcModeHint').textContent=all?'全體加班：勾選今晚不加班的人，其他人視為加班；料號會自動帶入組裝需求人數。':'組裝加班：選擇料號後，自動帶出組裝需求人數；勾選今晚要加班的人來計算還差幾人。';
+ $('overtimeHint').textContent=all?'區間請假、全天請假與下午請假會自動扣除。烤漆／噴漆人員也會列入加班總人數。':'區間請假、全天請假與下午請假會自動扣除。烤漆／噴漆人員也會列入加班總人數。';
+ $('overtimePeopleLabel').textContent=all?'今晚不加班的人（可複選）':'今晚要加班的人（可複選）';
+ $('calculateOvertime').textContent=all?'計算全體加班人數':'計算組裝加班人力';
+ $('overtimeManualLabel').textContent=all?'勾選不加班':'勾選加班';
+ renderOvertimeList();
+}
+function calcOvertime(){
+ const p=data.products.find(x=>x.name===$('product').value.trim());if(!p){alert('請從搜尋結果選擇正確料號');return}
+ const all=calcMode==='all',temp=loadTempAbsence(),range=new Set(activeLeaveNames());
+ const staff=data.employees.filter(name=>['1F','2F','烤漆'].includes(employeeCategory(name)));
+ const selected=new Set([...document.querySelectorAll('[data-overtime-name]:checked')].map(input=>input.value));
+ const automatic=new Set(staff.filter(name=>range.has(name)||temp[name]==='pm'||temp[name]==='full'));
+ const availableFor=group=>staff.filter(name=>employeeCategory(name)===group&&!automatic.has(name)&&(all?!selected.has(name):selected.has(name))).length;
+ const one=availableFor('1F'),two=availableFor('2F'),paint=availableFor('烤漆'),assembly=one+two,total=assembly+paint;
+ const need=Number(p.base)||0,missing=Math.max(0,need-assembly);
+ $('overtimeNeed').textContent=need;$('overtimeOne').textContent=one;$('overtimeTwo').textContent=two;$('overtimePaint').textContent=paint;$('overtimeAuto').textContent=automatic.size;$('overtimeManual').textContent=[...selected].filter(name=>!automatic.has(name)).length;
+ $('overtimeResultTitle').textContent=all?'晚上還需要學生':'組裝加班還需要人';
+ $('overtimeMissingBig').textContent=`${missing} 人`;$('overtimeMissingBig').style.color=missing?'var(--bad)':'var(--ok)';
+ $('overtimeStatusText').textContent=all?(missing?`晚上還需要 ${missing} 位學生`:'晚上人力足夠，不需要學生'):(missing?`${p.name} 需要 ${need} 位組裝人員，目前勾選 ${assembly} 位，還差 ${missing} 人。`:`${p.name} 組裝人力足夠；已勾選 ${assembly} 位組裝、${paint} 位烤漆／噴漆，共 ${total} 位加班。`);
+ $('overtimeStatusText').style.color=missing?'var(--bad)':'var(--ok)';
+ $('overtimeResult').classList.add('show');$('overtimeResult').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 function calcNightOvertime(){
@@ -1034,10 +1079,12 @@ function initCloudUI(){
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');if(b.dataset.tab==='settings')renderSettings();if(b.dataset.tab==='records')renderRecords()});
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.data?.source!=='junhong-manpower-embed')return;
- const frame=event.data.page==='night'?$('nightOvertimeFrame'):event.data.page==='saturday'?$('saturdayOvertimeFrame'):null;
+ const frame=event.data.page==='saturday'?$('saturdayOvertimeFrame'):null;
  if(frame&&Number.isFinite(event.data.height))frame.style.height=`${Math.max(620,event.data.height+8)}px`;
 });
 $('calculate').onclick=calc;
+$('calculateOvertime').onclick=calcOvertime;
+document.querySelectorAll('[data-calc-mode]').forEach(button=>button.onclick=()=>setCalcMode(button.dataset.calcMode));
 $('queryDate').onchange=()=>{lastResult=null;$('result').classList.remove('show');renderCalc();};
 $('langSwitch').onclick=()=>{lang=lang==='zh'?'vi':'zh';localStorage.setItem('manpowerV1Lang',lang);scheduleCloudUpload();applyLanguage();showToast(tr('saved'))};
 $('employeeList').onchange=e=>{
@@ -1077,6 +1124,7 @@ $('addEmployee').onclick=()=>{syncEmployeeInputs();let base=tr('newEmployee'),na
 $('saveEmployees').onclick=()=>{syncEmployeeInputs();persist();renderSettings();renderCalc();showToast(tr('saved'))};
 $('queryDate').value=todayISO();
 applyLanguage();
+setCalcMode('normal');
 initCloudUI();
 </script>
 </body>
