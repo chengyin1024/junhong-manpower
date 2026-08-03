@@ -162,6 +162,27 @@
       <button id="addLeave" class="secondary"><span data-i18n="addRangeLeave">新增區間請假</span></button>
     </div>
 
+    <div class="card">
+      <h2 data-i18n="nightOvertime">晚上加班</h2>
+      <div class="hint" data-i18n="nightOvertimeHint">先勾選今晚不加班的人，再按計算。區間請假、全天請假與下午請假會自動扣除。</div>
+      <label data-i18n="nightNoOvertime">今晚不加班（可複選）</label>
+      <div id="nightOvertimeList" class="employee-sections"></div>
+      <button id="calculateNight" class="primary" type="button" data-i18n="calculateNight">計算晚上加班人數</button>
+    </div>
+
+    <div id="nightResult" class="card result">
+      <h2 data-i18n="nightResultTitle">晚上加班結果</h2>
+      <div class="status" style="margin-bottom:4px" data-i18n="nightStudentsNeeded">晚上還需要學生</div><div id="nightMissingBig" class="big">0 人</div>
+      <div id="nightStatusText" class="status"></div>
+      <div class="stats">
+        <div class="stat"><small data-i18n="nightNeed">晚上所需組裝人數</small><strong id="nightNeed">0</strong> 人</div>
+        <div class="stat"><small data-i18n="nightAvailable">可加班正式員工</small><strong id="nightAvailable">0</strong> 人</div>
+        <div class="stat"><small data-i18n="nightAutoExcluded">自動扣除請假</small><strong id="nightAutoExcluded">0</strong> 人</div>
+        <div class="stat"><small data-i18n="nightManualExcluded">勾選不加班</small><strong id="nightManualExcluded">0</strong> 人</div>
+        <div class="stat full"><small data-i18n="conditions">計算條件</small><strong id="nightConditions" style="font-size:16px"></strong></div>
+      </div>
+    </div>
+
     <button id="calculate" class="primary" data-i18n="calculate">開始計算</button>
 
     <div id="result" class="card result">
@@ -302,6 +323,12 @@ function migrateStoredData(){
    }
  });
  if(tempChanged)localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(byDate));
+ const nightByDate=JSON.parse(localStorage.getItem('manpowerV1NightNoOvertimeByDate')||'{}');
+ const migratedNightByDate={};
+ Object.entries(nightByDate).forEach(([date,names])=>{
+   migratedNightByDate[date]=[...new Set((Array.isArray(names)?names:[]).map(migrateName).filter(Boolean))];
+ });
+ if(JSON.stringify(nightByDate)!==JSON.stringify(migratedNightByDate))localStorage.setItem('manpowerV1NightNoOvertimeByDate',JSON.stringify(migratedNightByDate));
  if(changed)localStorage.setItem('manpowerV1Data',JSON.stringify(data));
 }
 migrateStoredData();
@@ -340,7 +367,23 @@ function saveTempAbsence(statuses,date=selectedDate()){
    if(name&&['am','pm','full'].includes(type))clean[name]=type;
  });
  all[date]=clean;
- localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(all));
+  localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(all));
+}
+const NIGHT_NO_OVERTIME_PREFIX='__NIGHT_NO_OVERTIME__:';
+function loadNightNoOvertime(date=selectedDate()){
+ const all=JSON.parse(localStorage.getItem('manpowerV1NightNoOvertimeByDate')||'{}');
+ const names=Array.isArray(all[date])?all[date]:[];
+ return [...new Set(names.filter(Boolean))];
+}
+function saveNightNoOvertime(names,date=selectedDate()){
+ const all=JSON.parse(localStorage.getItem('manpowerV1NightNoOvertimeByDate')||'{}');
+ all[date]=[...new Set((names||[]).filter(Boolean))];
+ localStorage.setItem('manpowerV1NightNoOvertimeByDate',JSON.stringify(all));
+}
+function encodeNightNoOvertimeName(name){return `${NIGHT_NO_OVERTIME_PREFIX}${name}`}
+function decodeNightNoOvertimeName(value){
+ const s=String(value||'');
+ return s.startsWith(NIGHT_NO_OVERTIME_PREFIX)?s.slice(NIGHT_NO_OVERTIME_PREFIX.length):null;
 }
 function encodeTempEmployeeName(name,type){
  return type&&type!=='full'?`${name}|||${type}`:name;
@@ -403,10 +446,15 @@ async function refreshTempAbsencesFromCloud(){
   const {data:rows,error}=await cloudClient.from('manpower_temp_absences')
    .select('absence_date,employee_name').order('absence_date');
   if(error)throw error;
-  const byDate={};
-  (rows||[]).forEach(x=>{const d=decodeTempEmployeeName(x.employee_name);(byDate[x.absence_date]??={})[d.name]=d.type});
+  const byDate={},nightByDate={};
+  (rows||[]).forEach(x=>{
+   const nightName=decodeNightNoOvertimeName(x.employee_name);
+   if(nightName){(nightByDate[x.absence_date]??=[]).push(nightName);return;}
+   const d=decodeTempEmployeeName(x.employee_name);(byDate[x.absence_date]??={})[d.name]=d.type;
+  });
   localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(byDate));
-  renderEmployeeListOnly();
+  localStorage.setItem('manpowerV1NightNoOvertimeByDate',JSON.stringify(nightByDate));
+  renderEmployeeListOnly();renderNightOvertimeList();
   markSynced();
  }catch(err){
   setCloudStatus('同步失敗：'+err.message,'error');
@@ -430,6 +478,7 @@ const translations={
     specialProcess:'特殊製程',jubaoPrint:'巨堡印刷（裝箱增加1人）',screwProcess:'鎖螺絲／拆螺絲',
     tempLeave:'今日臨時請假',tempLeaveHint:'每個日期分別儲存，可選上午、下午或全天請假。',todayLeaveTop:'今日請假（置頂）',clearTempLeave:'清除所選日期臨時請假',normal:'正常',leaveAM:'上午請假',leavePM:'下午請假',leaveFull:'全天請假',morning:'上午',afternoon:'下午',
     rangeLeave:'日期區間請假',rangeLeaveHint:'設定期間後會每天自動計入請假；結束日隔天自動恢復到班。',addRangeLeave:'新增區間請假',
+    nightOvertime:'晚上加班',nightOvertimeHint:'先勾選今晚不加班的人，再按計算。區間請假、全天請假與下午請假會自動扣除。',nightNoOvertime:'今晚不加班（可複選）',calculateNight:'計算晚上加班人數',nightResultTitle:'晚上加班結果',nightStudentsNeeded:'晚上還需要學生',nightNeed:'晚上所需組裝人數',nightAvailable:'可加班正式員工',nightAutoExcluded:'自動扣除請假',nightManualExcluded:'勾選不加班',nightNeedStudents:n=>`晚上還需要 ${n} 位學生`,nightEnough:'晚上人力足夠，不需要學生',
     calculate:'開始計算',resultTitle:'計算結果',studentsNeeded:'還需要學生',todayNeed:'今日需求',formalTotal:'正式員工總數',
     leaveCount:'全部請假人數',formalPresent:'正式員工實到',productionTotal:'一般作業員總數',paintTotal:'烤漆人員總數',productionPresent:'一般作業員實到',paintPresent:'烤漆人員實到',conditions:'計算條件',saveToday:'儲存所選日期人力',
     storageNotice:'所有設定會儲存在這台裝置的瀏覽器中。',productSettings:'產品需求設定',
@@ -450,6 +499,7 @@ const translations={
     specialProcess:'Công đoạn đặc biệt',jubaoPrint:'In Jubao (tăng 1 người đóng thùng)',screwProcess:'Vặn vít / tháo vít',
     tempLeave:'Nghỉ tạm thời',tempLeaveHint:'Mỗi ngày lưu riêng; có thể chọn nghỉ sáng, chiều hoặc cả ngày.',todayLeaveTop:'Người nghỉ hôm nay (ưu tiên)',clearTempLeave:'Xóa nghỉ tạm thời của ngày đã chọn',normal:'Đi làm',leaveAM:'Nghỉ sáng',leavePM:'Nghỉ chiều',leaveFull:'Nghỉ cả ngày',morning:'Buổi sáng',afternoon:'Buổi chiều',
     rangeLeave:'Nghỉ theo khoảng ngày',rangeLeaveHint:'Sau khi cài đặt, hệ thống tự tính nghỉ mỗi ngày; ngày sau khi kết thúc sẽ tự đi làm lại.',addRangeLeave:'Thêm nghỉ theo khoảng ngày',
+    nightOvertime:'Tăng ca buổi tối',nightOvertimeHint:'Chọn người không tăng ca tối nay rồi bấm tính. Nghỉ theo khoảng ngày, nghỉ cả ngày và nghỉ chiều sẽ tự động trừ.',nightNoOvertime:'Không tăng ca tối nay (có thể chọn nhiều)',calculateNight:'Tính nhân lực tăng ca tối',nightResultTitle:'Kết quả tăng ca buổi tối',nightStudentsNeeded:'Sinh viên cần thêm buổi tối',nightNeed:'Số người lắp ráp cần buổi tối',nightAvailable:'Nhân viên chính thức có thể tăng ca',nightAutoExcluded:'Tự trừ người nghỉ',nightManualExcluded:'Đã chọn không tăng ca',nightNeedStudents:n=>`Buổi tối cần thêm ${n} sinh viên`,nightEnough:'Nhân lực buổi tối đủ, không cần sinh viên',
     calculate:'Bắt đầu tính',resultTitle:'Kết quả tính',studentsNeeded:'Số sinh viên cần thêm',todayNeed:'Nhu cầu hôm nay',formalTotal:'Tổng nhân viên chính thức',
     leaveCount:'Tổng số người nghỉ',formalPresent:'Nhân viên chính thức có mặt',productionTotal:'Tổng nhân viên sản xuất',paintTotal:'Tổng nhân viên sơn',productionPresent:'Nhân viên sản xuất có mặt',paintPresent:'Nhân viên sơn có mặt',conditions:'Điều kiện tính',saveToday:'Lưu nhân lực ngày đã chọn',
     storageNotice:'Mọi cài đặt được lưu trong trình duyệt của thiết bị này.',productSettings:'Cài đặt nhu cầu sản phẩm',
@@ -546,12 +596,24 @@ function renderEmployeeListOnly(){
  }).join('');
  list.innerHTML=priority+groups;
 }
+function renderNightOvertimeList(){
+ const list=$('nightOvertimeList');if(!list)return;
+ const selected=new Set(loadNightNoOvertime());
+ const categoryClass=category=>category==='1F'?'category-1f':'category-2f';
+ const groups=['1F','2F'].map(category=>{
+   const people=sortedEmployees().filter(x=>x.category===category);
+   if(!people.length)return '';
+   return `<section class="employee-section ${categoryClass(category)}"><h3 class="employee-section-title">${category}</h3><div class="employee-grid">${people.map(({name})=>`<label class="emp"><span class="emp-name">${esc(name)}</span><input type="checkbox" data-night-no-overtime="${esc(name)}" ${selected.has(name)?'checked':''}></label>`).join('')}</div></section>`;
+ }).join('');
+ list.innerHTML=groups||`<div class="empty">${tr('emptyRecords')}</div>`;
+}
 function renderCalc(){
  const currentProduct=$('product')?.value;
  if(!$('queryDate').value)$('queryDate').value=todayISO();
  $('product').innerHTML=data.products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
  if(currentProduct&&data.products.some(p=>p.id===currentProduct))$('product').value=currentProduct;
  renderEmployeeListOnly();
+ renderNightOvertimeList();
  renderLeaves();
 }
 function renderLeaves(){
@@ -729,6 +791,31 @@ function calc(){
  $('result').classList.add('show');$('result').scrollIntoView({behavior:'smooth'});
 }
 
+function calcNightOvertime(){
+ const p=data.products.find(x=>x.id===$('product').value);if(!p)return;
+ const wash=Number(document.querySelector('input[name=wash]:checked').value);
+ const temp=loadTempAbsence();
+ const range=new Set(activeLeaveNames());
+ const productionEmployees=data.employees.filter(name=>employeeCategory(name)!=='烤漆');
+ const manualNoOvertime=new Set(loadNightNoOvertime().filter(name=>productionEmployees.includes(name)));
+ const automaticNoOvertime=new Set(productionEmployees.filter(name=>range.has(name)||temp[name]==='pm'||temp[name]==='full'));
+ const unavailable=new Set([...manualNoOvertime,...automaticNoOvertime]);
+ const available=Math.max(0,productionEmployees.length-unavailable.size);
+ const need=p.base+(wash===2?data.rules.wash2Add:0)+($('jubao').checked?data.rules.jubaoAdd:0)+($('screw').checked?p.screwAdd:0);
+ const missing=Math.max(0,need-available);
+
+ $('nightNeed').textContent=need;
+ $('nightAvailable').textContent=available;
+ $('nightAutoExcluded').textContent=automaticNoOvertime.size;
+ $('nightManualExcluded').textContent=[...manualNoOvertime].filter(name=>!automaticNoOvertime.has(name)).length;
+ $('nightMissingBig').textContent=`${missing} ${tr('person')}`;
+ $('nightStatusText').textContent=missing?tr('nightNeedStudents',missing):tr('nightEnough');
+ $('nightConditions').textContent=`${p.name}｜${tr('washCondition',wash)}${$('jubao').checked?`｜${tr('jubaoShort')}`:''}${$('screw').checked?`｜${tr('screwShort')}`:''}`;
+ $('nightStatusText').style.color=missing?'var(--bad)':'var(--ok)';
+ $('nightMissingBig').style.color=missing?'var(--bad)':'var(--ok)';
+ $('nightResult').classList.add('show');$('nightResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
 // ===== V2.0 Supabase cloud sync（正式資料表版） =====
 let cloudClient=null, cloudChannels=[], cloudReady=false, applyingRemote=false, cloudTimer=null, remoteTimer=null, reconnectTimer=null;
 const BUILTIN_SUPABASE_URL='https://wzhtuulpnbkgbruhzmuo.supabase.co';
@@ -788,6 +875,10 @@ async function uploadCloud(silent=false){
    if(Array.isArray(statuses))statuses.forEach(name=>tempRows.push({absence_date:date,employee_name:name}));
    else Object.entries(statuses||{}).forEach(([name,type])=>tempRows.push({absence_date:date,employee_name:encodeTempEmployeeName(name,type)}));
   });
+  const nightByDate=JSON.parse(localStorage.getItem('manpowerV1NightNoOvertimeByDate')||'{}');
+  Object.entries(nightByDate).forEach(([date,names])=>{
+   (Array.isArray(names)?names:[]).forEach(name=>tempRows.push({absence_date:date,employee_name:encodeNightNoOvertimeName(name)}));
+  });
   const records=(JSON.parse(localStorage.getItem('manpowerV1Records')||'[]')).map(r=>{
    r=normalizeRecord(r);return {record_date:r.date,product:r.product,need:r.need,formal_total:r.formalTotal,absent:r.absent,formal_present:r.formalPresent,total_present:r.totalPresent,missing:r.missing,wash:r.wash,jubao:r.jubao,screw:r.screw};
   });
@@ -825,8 +916,13 @@ async function downloadCloud(silent=false){
    localStorage.setItem('manpowerV1Data',JSON.stringify(data));
    const activeCloudLeaves=(leavesR.data||[]).filter(x=>x.end_date>=todayISO());
    localStorage.setItem('manpowerV1Leaves',JSON.stringify(activeCloudLeaves.map(x=>({name:x.employee_name,start:x.start_date,end:x.end_date}))));
-   const byDate={};(tempR.data||[]).forEach(x=>{const d=decodeTempEmployeeName(x.employee_name);(byDate[x.absence_date]??={})[d.name]=d.type});
+   const byDate={},nightByDate={};(tempR.data||[]).forEach(x=>{
+    const nightName=decodeNightNoOvertimeName(x.employee_name);
+    if(nightName){(nightByDate[x.absence_date]??=[]).push(nightName);return;}
+    const d=decodeTempEmployeeName(x.employee_name);(byDate[x.absence_date]??={})[d.name]=d.type;
+   });
    localStorage.setItem('manpowerV1TempAbsenceByDate',JSON.stringify(byDate));
+   localStorage.setItem('manpowerV1NightNoOvertimeByDate',JSON.stringify(nightByDate));
    localStorage.setItem('manpowerV1Records',JSON.stringify((recordsR.data||[]).map(x=>normalizeRecord(x))));
    migrateStoredData();applyLanguage();renderCalc();renderSettings();renderRecords();
   } finally {applyingRemote=false;}
@@ -941,7 +1037,8 @@ function initCloudUI(){
 
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');if(b.dataset.tab==='settings')renderSettings();if(b.dataset.tab==='records')renderRecords()});
 $('calculate').onclick=calc;
-$('queryDate').onchange=()=>{lastResult=null;$('result').classList.remove('show');renderCalc();};
+$('calculateNight').onclick=calcNightOvertime;
+$('queryDate').onchange=()=>{lastResult=null;$('result').classList.remove('show');$('nightResult').classList.remove('show');renderCalc();};
 $('langSwitch').onclick=()=>{lang=lang==='zh'?'vi':'zh';localStorage.setItem('manpowerV1Lang',lang);scheduleCloudUpload();applyLanguage();showToast(tr('saved'))};
 $('employeeList').onchange=e=>{
  const select=e.target.closest('select.emp-status');
@@ -954,6 +1051,16 @@ $('employeeList').onchange=e=>{
  renderEmployeeListOnly();
  markManualDirty();
  showToast('已暫存在此裝置');
+};
+$('nightOvertimeList').onchange=e=>{
+ const checkbox=e.target.closest('input[data-night-no-overtime]');
+ if(!checkbox)return;
+ const names=new Set(loadNightNoOvertime());
+ if(checkbox.checked)names.add(checkbox.dataset.nightNoOvertime);
+ else names.delete(checkbox.dataset.nightNoOvertime);
+ saveNightNoOvertime([...names]);
+ markManualDirty();
+ showToast(tr('saved'));
 };
 $('clearAbsence').onclick=()=>{
  const date=selectedDate();
