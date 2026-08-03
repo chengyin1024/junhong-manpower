@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>人力計算整合加班｜樣品</title>
+  <style>
+    :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--bad:#b91c1c}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}.app{max-width:760px;margin:auto;padding:18px 14px 60px}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:13px}.top h1{font-size:23px;margin:0}.tag{font-size:12px;background:#fef3c7;color:#92400e;border-radius:999px;padding:6px 9px;font-weight:900;white-space:nowrap}.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}h2{font-size:18px;margin:0 0 7px}.hint{font-size:13px;color:var(--muted);line-height:1.55}.mode-choice{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.mode-btn{border:1px solid #d1d5db;background:#fff;color:var(--text);border-radius:12px;padding:13px 6px;font-size:15px;font-weight:900;cursor:pointer}.mode-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}label{display:block;font-size:14px;font-weight:900;margin:16px 0 7px}input[type=date],input[type=search]{width:100%;padding:13px 12px;border:1px solid #d1d5db;border-radius:12px;background:#fff;font-size:16px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.choice{display:grid;grid-template-columns:1fr 1fr;gap:8px}.choice label{margin:0}.choice input{display:none}.choice span{display:block;border:1px solid #d1d5db;border-radius:12px;padding:12px;text-align:center;font-weight:800}.choice input:checked+span{background:#111827;color:#fff;border-color:#111827}.people{display:flex;flex-direction:column;gap:10px;margin-top:8px}.employee-group{border:1px solid var(--line);border-radius:13px;padding:10px}.employee-group h3{margin:0 0 9px;padding-bottom:7px;border-bottom:2px solid;font-size:16px}.employee-group.one h3{color:#2563eb;border-color:#3b82f6}.employee-group.two h3{color:#0f9f9a;border-color:#14b8a6}.employee-group.paint h3{color:#ea580c;border-color:#f97316}.person-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.person{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px}.person input{width:20px;height:20px}.area-badge{display:inline-flex;border-radius:999px;padding:2px 7px;color:#fff;font-size:11px;font-weight:900;line-height:1.45}.area-badge.one{background:#3b82f6}.area-badge.two{background:#14b8a6}.area-badge.paint{background:#f97316}.primary{width:100%;border:0;border-radius:14px;background:var(--accent);color:#fff;padding:15px;font-size:17px;font-weight:900;margin-top:14px;cursor:pointer}.result{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:14px}.result.show{display:block}.big{font-size:40px;text-align:center;font-weight:900;margin:5px 0}.status{text-align:center;font-weight:900}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.stat{border:1px solid var(--line);border-radius:12px;padding:10px}.stat small{display:block;color:var(--muted)}.stat strong{font-size:21px}.notice{margin-top:12px;padding:10px 12px;border-radius:11px;background:#eff6ff;color:#1e3a8a;font-size:13px;line-height:1.55}.general-box{border:1px dashed #cbd5e1;border-radius:13px;padding:13px;margin-top:14px}.general-box strong{font-size:16px}.hidden{display:none}@media(max-width:480px){.mode-choice{grid-template-columns:1fr}.row,.person-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="top"><div><h1>人力計算系統</h1><div class="hint">整合晚上加班樣品</div></div><span class="tag">樣品，不影響正式資料</span></div>
+    <section class="card">
+      <h2>人力計算</h2>
+      <div class="hint">平常不選加班時，就是原本的一般人力計算；需要加班時，再選擇加班類型。</div>
+      <div class="mode-choice">
+        <button class="mode-btn active" data-mode="normal" type="button">一般人力</button>
+        <button class="mode-btn" data-mode="all" type="button">全體加班</button>
+        <button class="mode-btn" data-mode="assembly" type="button">組裝加班</button>
+      </div>
+      <div class="notice" id="modeHint">目前是一般人力計算：版面與原本相同。</div>
+
+      <div id="generalFields" class="general-box">
+        <strong>一般人力計算</strong>
+        <div class="hint" style="margin-top:5px">這裡保留目前原本的料號、洗料模式、特殊製程、請假人員與計算按鈕。</div>
+        <label for="normalProduct">搜尋料號</label><input id="normalProduct" type="search" list="productOptions" placeholder="輸入料號搜尋">
+        <div class="row"><div><label>洗料模式</label><div class="choice"><label><input type="radio" name="wash" checked><span>洗 1 個</span></label><label><input type="radio" name="wash"><span>洗 2 個</span></label></div></div><div><label>特殊製程</label><div class="choice"><label><input type="checkbox"><span>巨堡印刷</span></label><label><input type="checkbox"><span>鎖螺絲</span></label></div></div></div>
+        <button class="primary" type="button">一般人力計算</button>
+      </div>
+
+      <div id="overtimeFields" class="hidden">
+        <label for="date">加班日期</label><input id="date" type="date">
+        <div id="overtimeProduct"><label for="product">搜尋料號</label><input id="product" type="search" list="productOptions" placeholder="輸入料號搜尋"></div>
+        <label id="peopleLabel">今晚不加班的人（可複選）</label>
+        <div id="people" class="people"></div>
+        <button id="calculate" class="primary" type="button">計算全體加班人數</button>
+        <div id="result" class="result">
+          <div id="resultTitle" class="status">晚上還需要學生</div>
+          <div id="big" class="big">0 人</div>
+          <div id="status" class="status"></div>
+          <div class="stats">
+            <div id="needStat" class="stat"><small>所需組裝人數</small><strong id="need">0</strong> 人</div>
+            <div class="stat"><small>可加班 1F</small><strong id="one">0</strong> 人</div>
+            <div class="stat"><small>可加班 2F</small><strong id="two">0</strong> 人</div>
+            <div class="stat"><small>可加班烤漆／噴漆</small><strong id="paint">0</strong> 人</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <datalist id="productOptions"></datalist>
+  <script>
+    const $=id=>document.getElementById(id);const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};const esc=s=>String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    const defaults={products:[{name:'260mm',base:39},{name:'310mm',base:39},{name:'13吋',base:36}],employees:[],employeeCategories:{}};
+    const data=JSON.parse(localStorage.getItem('manpowerV1Data')||'null')||defaults;const category=name=>data.employeeCategories?.[name]||'1F';let mode='normal';
+    function updateProducts(){const options=(data.products||[]).map(product=>`<option value="${esc(product.name)}"></option>`).join('');$('productOptions').innerHTML=options;const first=(data.products||[])[0]?.name||'';if(!$('normalProduct').value)$('normalProduct').value=first;if(!$('product').value)$('product').value=first}
+    function renderPeople(){const groups=[['1F','1F','one'],['2F','2F','two'],['烤漆','烤漆／噴漆','paint']];$('people').innerHTML=groups.map(([id,title,style])=>{const names=(data.employees||[]).filter(name=>category(name)===id);if(!names.length)return '';return `<section class="employee-group ${style}"><h3>${title}</h3><div class="person-grid">${names.map(name=>`<label class="person"><span>${esc(name)} <span class="area-badge ${style}">${title}</span></span><input type="checkbox" value="${esc(name)}"></label>`).join('')}</div></section>`}).join('')||'<div class="hint">這台裝置尚未讀到員工資料；正式使用時會顯示設定中的名單。</div>'}
+    function setMode(next){mode=next;document.querySelectorAll('.mode-btn').forEach(button=>button.classList.toggle('active',button.dataset.mode===mode));const overtime=mode!=='normal';$('generalFields').classList.toggle('hidden',overtime);$('overtimeFields').classList.toggle('hidden',!overtime);$('result').classList.remove('show');if(mode==='normal'){$('modeHint').textContent='目前是一般人力計算：版面與原本相同。';return}const all=mode==='all';$('overtimeProduct').classList.toggle('hidden',!all);$('peopleLabel').textContent=all?'今晚不加班的人（可複選）':'今晚要加班的人（可複選）';$('calculate').textContent=all?'計算全體加班人數':'統計組裝加班人數';$('modeHint').textContent=all?'全體加班：選擇不加班的人，其他人自動視為加班；保留料號與學生缺額計算。':'組裝加班：不需要料號，直接勾選今晚加班的人；1F、2F、烤漆／噴漆都會列入總人數。';renderPeople()}
+    function calculate(){const selected=new Set([...document.querySelectorAll('#people input:checked')].map(input=>input.value));const count=group=>(data.employees||[]).filter(name=>category(name)===group&&(mode==='all'?!selected.has(name):selected.has(name))).length;const one=count('1F'),two=count('2F'),paint=count('烤漆'),assembly=one+two,total=assembly+paint;const all=mode==='all';const product=all?(data.products||[]).find(item=>item.name===$('product').value.trim()):null;if(all&&!product){alert('請從搜尋結果選擇正確料號');return}const need=all?(Number(product.base)||0):0,missing=all?Math.max(0,need-assembly):0;$('one').textContent=one;$('two').textContent=two;$('paint').textContent=paint;$('need').textContent=need;$('needStat').classList.toggle('hidden',!all);$('resultTitle').textContent=all?'晚上還需要學生':'組裝加班總人數';$('big').textContent=all?`${missing} 人`:`${total} 人`;$('big').style.color=all&&missing?'var(--bad)':'var(--ok)';$('status').textContent=all?(missing?`晚上還需要 ${missing} 位學生`:'晚上人力足夠，不需要學生'):`已勾選 ${total} 位人員加班（含烤漆／噴漆）`;$('status').style.color=all&&missing?'var(--bad)':'var(--ok)';$('result').classList.add('show')}
+    document.querySelectorAll('.mode-btn').forEach(button=>button.onclick=()=>setMode(button.dataset.mode));$('calculate').onclick=calculate;$('date').value=today();updateProducts();setMode('normal');
+  </script>
+</body>
+</html>
