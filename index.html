@@ -9,7 +9,7 @@
     :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--warn:#b45309;--bad:#b91c1c}
     *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
     .app{max-width:760px;margin:auto;padding:14px 14px 90px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}.top h1{font-size:22px;margin:0}.top-actions{display:flex;align-items:center;gap:7px}.lang-btn{border:1px solid #d1d5db;background:#fff;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800}.tag{font-size:12px;background:#e5e7eb;padding:5px 9px;border-radius:999px}
-    .tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}.tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 6px;font-weight:700}.tab.active{background:var(--accent);color:#fff}.tab-link{display:block;color:var(--text);text-align:center;text-decoration:none}
+    .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 6px;font-weight:700}.tab.active{background:var(--accent);color:#fff}.tab-link{display:block;color:var(--text);text-align:center;text-decoration:none}
     .panel{display:none}.panel.active{display:block}.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
     h2{font-size:17px;margin:0 0 14px}label{display:block;font-weight:700;margin:12px 0 7px}.hint{font-size:13px;color:var(--muted)}
     select,input[type=number],input[type=text],input[type=date]{width:100%;padding:13px 12px;border:1px solid #d1d5db;border-radius:12px;font-size:16px;background:#fff}
@@ -121,7 +121,6 @@
   <div class="tabs">
     <button class="tab active" data-tab="calc" data-i18n="tabCalc">人力計算</button>
     <button class="tab" data-tab="settings" data-i18n="tabSettings">設定</button>
-    <button class="tab" data-tab="records" data-i18n="tabRecords">每日紀錄</button>
     <a class="tab tab-link" href="overtime-sample.html" data-i18n="nightOvertime">晚上加班</a>
     <a class="tab tab-link" href="saturday-overtime-sample.html" data-i18n="saturdayOvertime">星期六加班</a>
   </div>
@@ -181,7 +180,6 @@
         <div class="stat full"><small data-i18n="leaveCount">全部請假人數</small><strong id="absentCount">0</strong> 人</div>
         <div class="stat full"><small data-i18n="conditions">計算條件</small><strong id="conditions" style="font-size:16px"></strong></div>
       </div>
-      <button id="saveRecord" class="primary" data-i18n="saveToday">儲存所選日期人力</button>
     </div>
   </section>
 
@@ -226,13 +224,6 @@
     </div>
   </section>
 
-  <section id="records" class="panel">
-    <div class="card">
-      <h2>每日紀錄</h2>
-      <div id="recordWrap"></div>
-      <button id="clearRecords" class="danger" style="margin-top:12px" data-i18n="clearRecords">清除全部紀錄</button>
-    </div>
-  </section>
 </div>
 <div id="toast" class="toast">儲存成功</div>
 <script>
@@ -1048,7 +1039,6 @@ $('leaveSettings').onchange=()=>{
   showToast(tr('saved'));
 };
 
-$('saveRecord').onclick=()=>{if(!lastResult)return;const arr=JSON.parse(localStorage.getItem('manpowerV1Records')||'[]');arr.unshift(lastResult);localStorage.setItem('manpowerV1Records',JSON.stringify(arr.slice(0,365)));scheduleCloudUpload();showToast(tr('saved'));};
 $('addProduct').onclick=()=>{
  syncProductInputs();
  data.products.push({id:'p'+Date.now(),name:tr('newProduct'),base:0,screwAdd:0});
@@ -1065,7 +1055,6 @@ $('saveProducts').onclick=()=>{
 $('saveRules').onclick=()=>{syncProductInputs();data.rules.wash2Add=Math.max(0,+$('wash2Add').value||0);data.rules.jubaoAdd=Math.max(0,+$('jubaoAdd').value||0);persist();renderSettings();renderCalc();showToast(tr('saved'))};
 $('addEmployee').onclick=()=>{syncEmployeeInputs();let base=tr('newEmployee'),name=base,n=2;while(data.employees.includes(name))name=`${base}${n++}`;data.employees.push(name);data.employeeCategories??={};data.employeeCategories[name]='1F';persist();renderSettings();renderCalc();showToast(tr('added'))};
 $('saveEmployees').onclick=()=>{syncEmployeeInputs();persist();renderSettings();renderCalc();showToast(tr('saved'))};
-$('clearRecords').onclick=()=>{if(confirm(tr('confirmClear'))){localStorage.removeItem('manpowerV1Records');scheduleCloudUpload();renderRecords();showToast(tr('cleared'))}};
 $('queryDate').value=todayISO();
 applyLanguage();
 initCloudUI();
