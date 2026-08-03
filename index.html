@@ -9,7 +9,7 @@
     :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--warn:#b45309;--bad:#b91c1c}
     *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
     .app{max-width:760px;margin:auto;padding:14px 14px 90px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}.top h1{font-size:22px;margin:0}.top-actions{display:flex;align-items:center;gap:7px}.lang-btn{border:1px solid #d1d5db;background:#fff;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800}.tag{font-size:12px;background:#e5e7eb;padding:5px 9px;border-radius:999px}
-    .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 6px;font-weight:700}.tab.active{background:var(--accent);color:#fff}
+    .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 6px;font-weight:700}.tab.active{background:var(--accent);color:#fff}.tab-link{display:block;color:var(--text);text-align:center;text-decoration:none}
     .panel{display:none}.panel.active{display:block}.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
     h2{font-size:17px;margin:0 0 14px}label{display:block;font-weight:700;margin:12px 0 7px}.hint{font-size:13px;color:var(--muted)}
     select,input[type=number],input[type=text],input[type=date]{width:100%;padding:13px 12px;border:1px solid #d1d5db;border-radius:12px;font-size:16px;background:#fff}
@@ -27,6 +27,7 @@
     .empty{color:var(--muted);text-align:center;padding:20px 0}.notice{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:12px;padding:11px;font-size:14px}
     @media(max-width:480px){
   .employee-grid{grid-template-columns:1fr}
+  .tabs{grid-template-columns:repeat(2,1fr)}
   .row{grid-template-columns:1fr}
   .settings-row{
     grid-template-columns:minmax(0,1fr) 58px 58px 32px;
@@ -121,6 +122,7 @@
     <button class="tab active" data-tab="calc" data-i18n="tabCalc">人力計算</button>
     <button class="tab" data-tab="settings" data-i18n="tabSettings">設定</button>
     <button class="tab" data-tab="records" data-i18n="tabRecords">每日紀錄</button>
+    <a class="tab tab-link" href="overtime-sample.html" data-i18n="nightOvertime">晚上加班</a>
   </div>
 
   <section id="calc" class="panel active">
@@ -160,27 +162,6 @@
       <div class="hint" data-i18n="rangeLeaveHint">設定期間後會每天自動計入請假；結束日隔天自動恢復到班。</div>
       <div id="leaveSettings"></div>
       <button id="addLeave" class="secondary"><span data-i18n="addRangeLeave">新增區間請假</span></button>
-    </div>
-
-    <div class="card">
-      <h2 data-i18n="nightOvertime">晚上加班</h2>
-      <div class="hint" data-i18n="nightOvertimeHint">先勾選今晚不加班的人，再按計算。區間請假、全天請假與下午請假會自動扣除。</div>
-      <label data-i18n="nightNoOvertime">今晚不加班（可複選）</label>
-      <div id="nightOvertimeList" class="employee-sections"></div>
-      <button id="calculateNight" class="primary" type="button" data-i18n="calculateNight">計算晚上加班人數</button>
-    </div>
-
-    <div id="nightResult" class="card result">
-      <h2 data-i18n="nightResultTitle">晚上加班結果</h2>
-      <div class="status" style="margin-bottom:4px" data-i18n="nightStudentsNeeded">晚上還需要學生</div><div id="nightMissingBig" class="big">0 人</div>
-      <div id="nightStatusText" class="status"></div>
-      <div class="stats">
-        <div class="stat"><small data-i18n="nightNeed">晚上所需組裝人數</small><strong id="nightNeed">0</strong> 人</div>
-        <div class="stat"><small data-i18n="nightAvailable">可加班正式員工</small><strong id="nightAvailable">0</strong> 人</div>
-        <div class="stat"><small data-i18n="nightAutoExcluded">自動扣除請假</small><strong id="nightAutoExcluded">0</strong> 人</div>
-        <div class="stat"><small data-i18n="nightManualExcluded">勾選不加班</small><strong id="nightManualExcluded">0</strong> 人</div>
-        <div class="stat full"><small data-i18n="conditions">計算條件</small><strong id="nightConditions" style="font-size:16px"></strong></div>
-      </div>
     </div>
 
     <button id="calculate" class="primary" data-i18n="calculate">開始計算</button>
@@ -1037,8 +1018,7 @@ function initCloudUI(){
 
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');if(b.dataset.tab==='settings')renderSettings();if(b.dataset.tab==='records')renderRecords()});
 $('calculate').onclick=calc;
-$('calculateNight').onclick=calcNightOvertime;
-$('queryDate').onchange=()=>{lastResult=null;$('result').classList.remove('show');$('nightResult').classList.remove('show');renderCalc();};
+$('queryDate').onchange=()=>{lastResult=null;$('result').classList.remove('show');renderCalc();};
 $('langSwitch').onclick=()=>{lang=lang==='zh'?'vi':'zh';localStorage.setItem('manpowerV1Lang',lang);scheduleCloudUpload();applyLanguage();showToast(tr('saved'))};
 $('employeeList').onchange=e=>{
  const select=e.target.closest('select.emp-status');
@@ -1051,16 +1031,6 @@ $('employeeList').onchange=e=>{
  renderEmployeeListOnly();
  markManualDirty();
  showToast('已暫存在此裝置');
-};
-$('nightOvertimeList').onchange=e=>{
- const checkbox=e.target.closest('input[data-night-no-overtime]');
- if(!checkbox)return;
- const names=new Set(loadNightNoOvertime());
- if(checkbox.checked)names.add(checkbox.dataset.nightNoOvertime);
- else names.delete(checkbox.dataset.nightNoOvertime);
- saveNightNoOvertime([...names]);
- markManualDirty();
- showToast(tr('saved'));
 };
 $('clearAbsence').onclick=()=>{
  const date=selectedDate();

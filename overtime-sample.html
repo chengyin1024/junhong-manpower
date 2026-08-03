@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>晚上加班樣品｜人力計算系統</title>
+  <title>晚上加班｜人力計算系統</title>
   <style>
     :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--bad:#b91c1c}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}
-    .app{max-width:760px;margin:auto;padding:14px 14px 60px}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}.top h1{font-size:22px;margin:0}.tag{font-size:12px;background:#fef3c7;color:#92400e;padding:6px 9px;border-radius:999px;font-weight:800;white-space:nowrap}
+    .app{max-width:760px;margin:auto;padding:14px 14px 60px}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}.top h1{font-size:22px;margin:0}.tag{font-size:12px;background:#e5e7eb;color:#374151;padding:6px 9px;border-radius:999px;font-weight:800;white-space:nowrap}.back{display:inline-block;margin-top:7px;color:#1d4ed8;font-size:13px;font-weight:800;text-decoration:none}
     .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}h2{font-size:18px;margin:0 0 8px}.hint{font-size:13px;color:var(--muted);line-height:1.55}label{display:block;font-size:14px;font-weight:800;margin:16px 0 7px}select,input[type=date]{width:100%;padding:13px 12px;border:1px solid #d1d5db;border-radius:12px;background:#fff;font-size:16px}
     button{font:inherit;font-weight:800;cursor:pointer}.overtime-toggle{width:100%;border:0;border-radius:14px;background:var(--accent);color:#fff;padding:16px;font-size:18px}.overtime-toggle.open{background:#fff;color:var(--accent);border:2px solid var(--accent)}.panel{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:14px}.panel.show{display:block}.people{display:flex;flex-direction:column;gap:10px;margin-top:8px}.employee-group{border:1px solid var(--line);border-radius:13px;padding:10px}.employee-group h3{margin:0 0 9px;padding-bottom:7px;border-bottom:2px solid;font-size:16px}.employee-group.one h3{color:#2563eb;border-color:#3b82f6}.employee-group.two h3{color:#0f9f9a;border-color:#14b8a6}.employee-group.paint h3{color:#ea580c;border-color:#f97316}.person-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.person{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px}.person input{width:20px;height:20px}.person-name{display:flex;align-items:center;gap:6px;font-weight:800}.area-badge{display:inline-flex;border-radius:999px;padding:2px 7px;color:#fff;font-size:11px;font-weight:900;line-height:1.45}.area-badge.one{background:#3b82f6}.area-badge.two{background:#14b8a6}.area-badge.paint{background:#f97316}.primary{width:100%;border:0;border-radius:14px;background:var(--accent);color:#fff;padding:15px;font-size:17px;margin-top:14px}.result{display:none;margin-top:14px;background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:15px}.result.show{display:block}.big{text-align:center;font-size:42px;font-weight:900;margin:5px 0}.status{text-align:center;font-weight:800}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.stat{border:1px solid var(--line);border-radius:12px;padding:11px}.stat small{display:block;color:var(--muted)}.stat strong{font-size:23px}.note{font-size:12px;color:var(--muted);text-align:center;margin:15px 0 0}@media(max-width:480px){.person-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
   <main class="app">
-    <div class="top"><div><h1>人力計算系統</h1><div class="hint">晚上加班操作樣品</div></div><span class="tag">樣品，不影響正式資料</span></div>
+    <div class="top"><div><h1>人力計算系統</h1><div class="hint">晚上加班</div><a class="back" href="index.html">← 回人力計算</a></div><span class="tag">獨立頁面</span></div>
     <section class="card">
       <h2>人力計算</h2>
       <div class="hint">先按下面的「晚上加班」，才會打開勾選人員與計算畫面。</div>
@@ -39,7 +39,7 @@
           </div>
         </div>
       </div>
-      <p class="note">此樣品會使用你目前系統內的產品、1F／2F／烤漆員工與區間請假資料；學生缺額只依 1F＋2F 組裝人力計算，不會寫入或變更正式資料。</p>
+      <p class="note">會使用目前系統內的產品、1F／2F／烤漆員工與區間請假資料；學生缺額只依 1F＋2F 組裝人力計算。</p>
     </section>
   </main>
   <script>
