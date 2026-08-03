@@ -201,7 +201,7 @@
       <div id="overtimeResult" class="card result">
         <h2 id="overtimeResultTitle">晚上還需要學生</h2>
         <div id="overtimeMissingBig" class="big">0 人</div><div id="overtimeStatusText" class="status"></div>
-        <div class="stats"><div class="stat"><small>所需組裝人數</small><strong id="overtimeNeed">0</strong> 人</div><div class="stat"><small>可加班 1F</small><strong id="overtimeOne">0</strong> 人</div><div class="stat"><small>可加班 2F</small><strong id="overtimeTwo">0</strong> 人</div><div class="stat"><small>可加班烤漆／噴漆</small><strong id="overtimePaint">0</strong> 人</div><div class="stat"><small>自動扣除請假</small><strong id="overtimeAuto">0</strong> 人</div><div class="stat"><small id="overtimeManualLabel">勾選不加班</small><strong id="overtimeManual">0</strong> 人</div></div>
+        <div class="stats"><div class="stat"><small id="overtimeNeedLabel">所需組裝人數</small><strong id="overtimeNeed">0</strong> 人</div><div class="stat"><small>可加班 1F</small><strong id="overtimeOne">0</strong> 人</div><div class="stat"><small>可加班 2F</small><strong id="overtimeTwo">0</strong> 人</div><div class="stat"><small>可加班烤漆／噴漆</small><strong id="overtimePaint">0</strong> 人</div><div class="stat"><small>自動扣除請假</small><strong id="overtimeAuto">0</strong> 人</div><div class="stat"><small id="overtimeManualLabel">勾選不加班</small><strong id="overtimeManual">0</strong> 人</div></div>
       </div>
     </div>
   </section>
@@ -848,11 +848,12 @@ function calcOvertime(){
  const automatic=new Set(staff.filter(name=>range.has(name)||temp[name]==='pm'||temp[name]==='full'));
  const availableFor=group=>staff.filter(name=>employeeCategory(name)===group&&!automatic.has(name)&&(all?!selected.has(name):selected.has(name))).length;
  const one=availableFor('1F'),two=availableFor('2F'),paint=availableFor('烤漆'),assembly=one+two,total=assembly+paint;
- const need=Number(p.base)||0,missing=Math.max(0,need-assembly);
+ const need=Number(p.base)||0,countedPeople=all?assembly:total,missing=Math.max(0,need-countedPeople);
  $('overtimeNeed').textContent=need;$('overtimeOne').textContent=one;$('overtimeTwo').textContent=two;$('overtimePaint').textContent=paint;$('overtimeAuto').textContent=automatic.size;$('overtimeManual').textContent=[...selected].filter(name=>!automatic.has(name)).length;
+ $('overtimeNeedLabel').textContent=all?'所需組裝人數':'產品所需人數（含烤漆）';
  $('overtimeResultTitle').textContent=all?'晚上還需要學生':'組裝加班還需要人';
  $('overtimeMissingBig').textContent=`${missing} 人`;$('overtimeMissingBig').style.color=missing?'var(--bad)':'var(--ok)';
- $('overtimeStatusText').textContent=all?(missing?`晚上還需要 ${missing} 位學生`:'晚上人力足夠，不需要學生'):(missing?`${p.name} 需要 ${need} 位組裝人員，目前勾選 ${assembly} 位，還差 ${missing} 人。`:`${p.name} 組裝人力足夠；已勾選 ${assembly} 位組裝、${paint} 位烤漆／噴漆，共 ${total} 位加班。`);
+ $('overtimeStatusText').textContent=all?(missing?`晚上還需要 ${missing} 位學生`:'晚上人力足夠，不需要學生'):(missing?`${p.name} 需要 ${need} 位人力，目前勾選 ${total} 位（含烤漆／噴漆），還差 ${missing} 人。`:`${p.name} 人力足夠；已勾選 ${assembly} 位組裝、${paint} 位烤漆／噴漆，共 ${total} 位加班。`);
  $('overtimeStatusText').style.color=missing?'var(--bad)':'var(--ok)';
  $('overtimeResult').classList.add('show');$('overtimeResult').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
