@@ -622,7 +622,7 @@ function renderOvertimeList(){
 function renderOvertimeSelectedSummary(){
  const box=$('overtimeSelectedSummary');if(!box)return;
  const temp=loadTempAbsence(),range=new Set(activeLeaveNames());
- const selected=new Set([...document.querySelectorAll('[data-overtime-name]:checked')].map(input=>input.value));
+ const selected=new Set([...document.querySelectorAll('[data-overtime-name]:checked')].map(input=>input.dataset.overtimeName));
  const all=calcMode==='all';
  const active=sortedEmployees().filter(({name})=>!range.has(name)&&temp[name]!=='pm'&&temp[name]!=='full'&&(all?!selected.has(name):selected.has(name)));
  const product=$('product')?.value.trim()||'未選擇產品';
@@ -844,7 +844,7 @@ function calcOvertime(){
  const p=data.products.find(x=>x.name===$('product').value.trim());if(!p){alert('請從搜尋結果選擇正確產品名稱');return}
  const all=calcMode==='all',temp=loadTempAbsence(),range=new Set(activeLeaveNames());
  const staff=data.employees.filter(name=>['1F','2F','烤漆'].includes(employeeCategory(name)));
- const selected=new Set([...document.querySelectorAll('[data-overtime-name]:checked')].map(input=>input.value));
+ const selected=new Set([...document.querySelectorAll('[data-overtime-name]:checked')].map(input=>input.dataset.overtimeName));
  const automatic=new Set(staff.filter(name=>range.has(name)||temp[name]==='pm'||temp[name]==='full'));
  const availableFor=group=>staff.filter(name=>employeeCategory(name)===group&&!automatic.has(name)&&(all?!selected.has(name):selected.has(name))).length;
  const one=availableFor('1F'),two=availableFor('2F'),paint=availableFor('烤漆'),assembly=one+two,total=assembly+paint;
