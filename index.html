@@ -9,7 +9,7 @@
     :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--warn:#b45309;--bad:#b91c1c}
     *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
     .app{max-width:760px;margin:auto;padding:14px 14px 90px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}.top h1{font-size:22px;margin:0}.top-actions{display:flex;align-items:center;gap:7px}.lang-btn{border:1px solid #d1d5db;background:#fff;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800}.tag{font-size:12px;background:#e5e7eb;padding:5px 9px;border-radius:999px}
-    .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 6px;font-weight:700}.tab.active{background:var(--accent);color:#fff}.tab-link{display:block;color:var(--text);text-align:center;text-decoration:none}.calc-mode{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.calc-mode button{border:1px solid #d1d5db;background:#fff;border-radius:12px;padding:12px 6px;font-weight:800;cursor:pointer}.calc-mode button.active{background:var(--accent);color:#fff;border-color:var(--accent)}.mode-hidden{display:none!important}
+    .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 6px;font-weight:700}.tab.active{background:var(--accent);color:#fff}.tab-link{display:block;color:var(--text);text-align:center;text-decoration:none}.calc-mode{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.calc-mode button{border:1px solid #d1d5db;background:#fff;border-radius:12px;padding:12px 6px;font-weight:800;cursor:pointer}.calc-mode button.active{background:var(--accent);color:#fff;border-color:var(--accent)}.mode-hidden{display:none!important}.selected-summary{margin-top:14px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:13px;padding:12px}.selected-summary h3{margin:0 0 5px;font-size:16px}.selected-summary-meta{font-size:13px;color:#1e3a8a;margin-bottom:8px}.selected-summary-row{padding:7px 0;border-top:1px solid #bfdbfe;font-size:14px;line-height:1.55}.selected-summary-row strong{margin-right:6px}
     .embedded-tool{display:block;width:100%;min-height:900px;border:0;border-radius:16px;background:var(--bg)}
     .panel{display:none}.panel.active{display:block}.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
     h2{font-size:17px;margin:0 0 14px}label{display:block;font-weight:700;margin:12px 0 7px}.hint{font-size:13px;color:var(--muted)}
@@ -194,6 +194,7 @@
         <div id="overtimeHint" class="hint"></div>
         <label id="overtimePeopleLabel">今晚不加班的人（可複選）</label>
         <div id="overtimeEmployeeList" class="employee-sections" style="margin-top:10px"></div>
+        <div id="overtimeSelectedSummary" class="selected-summary"></div>
         <button id="calculateOvertime" class="primary" type="button">計算全體加班人數</button>
       </div>
       <div id="overtimeResult" class="card result">
@@ -615,6 +616,17 @@ function renderOvertimeList(){
    return `<section class="employee-section ${categoryClass(category)}"><h3 class="employee-section-title">${title}</h3><div class="employee-grid">${people.map(({name})=>{const unavailable=range.has(name)||temp[name]==='pm'||temp[name]==='full';return `<label class="emp ${unavailable?'absent':''}"><span class="emp-name">${esc(name)}${unavailable?'（請假）':''}</span><input type="checkbox" data-overtime-name="${esc(name)}" ${unavailable?'disabled':''}></label>`}).join('')}</div></section>`;
  }).join('');
  list.innerHTML=groups||`<div class="empty">尚未建立員工資料。</div>`;
+ renderOvertimeSelectedSummary();
+}
+function renderOvertimeSelectedSummary(){
+ const box=$('overtimeSelectedSummary');if(!box)return;
+ const temp=loadTempAbsence(),range=new Set(activeLeaveNames());
+ const selected=new Set([...document.querySelectorAll('[data-overtime-name]:checked')].map(input=>input.value));
+ const all=calcMode==='all';
+ const active=sortedEmployees().filter(({name})=>!range.has(name)&&temp[name]!=='pm'&&temp[name]!=='full'&&(all?!selected.has(name):selected.has(name)));
+ const product=$('product')?.value.trim()||'未選擇產品';
+ const rows=['1F','2F','烤漆'].map(group=>{const names=active.filter(item=>item.category===group).map(item=>item.name);const title=group==='烤漆'?'烤漆／噴漆':group;return `<div class="selected-summary-row"><strong>${title} ${names.length} 人</strong>${names.length?names.map(esc).join('、'):'—'}</div>`}).join('');
+ box.innerHTML=`<h3>本次加班人員（可截圖傳 LINE）｜共 ${active.length} 人</h3><div class="selected-summary-meta">${selectedDate()}｜${esc(product)}</div>${rows}`;
 }
 function renderCalc(){
  const currentProduct=$('product')?.value;
@@ -1089,6 +1101,8 @@ window.addEventListener('message',event=>{
 $('calculate').onclick=calc;
 $('calculateOvertime').onclick=calcOvertime;
 $('quickAddProduct').onclick=()=>openProductModal(null,true);
+$('overtimeEmployeeList').onchange=renderOvertimeSelectedSummary;
+$('product').oninput=renderOvertimeSelectedSummary;
 document.querySelectorAll('[data-calc-mode]').forEach(button=>button.onclick=()=>setCalcMode(button.dataset.calcMode));
 $('queryDate').onchange=()=>{lastResult=null;$('result').classList.remove('show');renderCalc();};
 $('langSwitch').onclick=()=>{lang=lang==='zh'?'vi':'zh';localStorage.setItem('manpowerV1Lang',lang);scheduleCloudUpload();applyLanguage();showToast(tr('saved'))};
