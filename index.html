@@ -140,6 +140,7 @@
       <h2 style="margin-top:16px" data-i18n="todayConditions">生產條件</h2>
       <label data-i18n="queryDate">查詢日期</label><input id="queryDate" type="date">
       <label data-i18n="productSearch">搜尋料號</label><input id="product" type="search" list="productOptions" autocomplete="off" placeholder="輸入料號搜尋"><datalist id="productOptions"></datalist>
+      <div id="quickAddProductWrap" class="mode-hidden" style="margin-top:9px"><button id="quickAddProduct" class="secondary" type="button">＋ 新增產品</button><div class="hint" style="margin-top:6px">可直接新增料號與基本需求人數，儲存後會自動選取。</div></div>
       <div class="normal-only"><label data-i18n="washMode">洗料模式</label>
         <div class="choice"><label><input type="radio" name="wash" value="1" checked><span data-i18n="washOne">洗1個</span></label><label><input type="radio" name="wash" value="2"><span data-i18n="washTwo">洗2個</span></label></div>
         <label data-i18n="specialProcess">特殊製程</label>
@@ -692,23 +693,25 @@ function syncEmployeeInputs(){
   data.employeeCategories={};
   data.employees.forEach(name=>data.employeeCategories[name]=nextCategories[name]||'1F');
 }
-let editingProductId=null;
+let editingProductId=null,selectProductAfterSave=false;
 function sortProducts(){data.products.sort((a,b)=>String(a.name).localeCompare(String(b.name),'zh-Hant',{numeric:true,sensitivity:'base'}))}
-function openProductModal(id=null){
+function openProductModal(id=null,selectAfterSave=false){
  editingProductId=id;
+ selectProductAfterSave=!!selectAfterSave&&!id;
  const product=id?data.products.find(p=>p.id===id):null;
  $('productModalTitle').textContent=product?tr('productEditTitle'):tr('productAddTitle');
  $('productModalName').value=product?.name||'';$('productModalBase').value=product?.base??0;$('productModalScrew').value=product?.screwAdd??0;
  $('deleteModalProduct').style.visibility=product?'visible':'hidden';
  $('productModal').classList.add('show');setTimeout(()=>$('productModalName').focus(),0);
 }
-function closeProductModal(){$('productModal').classList.remove('show');editingProductId=null}
+function closeProductModal(){$('productModal').classList.remove('show');editingProductId=null;selectProductAfterSave=false}
 function saveProductModal(){
  const name=$('productModalName').value.trim();if(!name)return;
  if(data.products.some(p=>String(p.name).toLowerCase()===name.toLowerCase()&&p.id!==editingProductId)){alert(tr('duplicatePartNumber'));return}
+ const shouldSelectProduct=selectProductAfterSave;
  const payload={id:editingProductId||`p${Date.now()}`,name,base:Math.max(0,Number($('productModalBase').value)||0),screwAdd:Math.max(0,Number($('productModalScrew').value)||0)};
  if(editingProductId)Object.assign(data.products.find(p=>p.id===editingProductId),payload);else data.products.push(payload);
- sortProducts();persist();closeProductModal();renderSettings();renderCalc();showToast(tr('productSaved'));
+ sortProducts();persist();closeProductModal();renderSettings();renderCalc();if(shouldSelectProduct){$('product').value=name;renderOvertimeList();}showToast(tr('productSaved'));
 }
 function deleteModalProduct(){
  const product=data.products.find(p=>p.id===editingProductId);if(!product||!confirm(tr('confirmDelete')))return;
@@ -805,6 +808,7 @@ function setCalcMode(mode){
  const normal=mode==='normal';
  document.querySelectorAll('.normal-only').forEach(item=>item.classList.toggle('mode-hidden',!normal));
  $('overtimeWork').classList.toggle('mode-hidden',normal);
+ $('quickAddProductWrap').classList.toggle('mode-hidden',mode!=='assembly');
  $('result').classList.remove('show');$('overtimeResult').classList.remove('show');
  if(normal){$('calcModeHint').textContent='目前是一般人力計算：保留原本的請假與人力試算。';return;}
  const all=mode==='all';
@@ -1084,6 +1088,7 @@ window.addEventListener('message',event=>{
 });
 $('calculate').onclick=calc;
 $('calculateOvertime').onclick=calcOvertime;
+$('quickAddProduct').onclick=()=>openProductModal(null,true);
 document.querySelectorAll('[data-calc-mode]').forEach(button=>button.onclick=()=>setCalcMode(button.dataset.calcMode));
 $('queryDate').onchange=()=>{lastResult=null;$('result').classList.remove('show');renderCalc();};
 $('langSwitch').onclick=()=>{lang=lang==='zh'?'vi':'zh';localStorage.setItem('manpowerV1Lang',lang);scheduleCloudUpload();applyLanguage();showToast(tr('saved'))};
