@@ -139,8 +139,8 @@
       <div id="calcModeHint" class="notice">目前是一般人力計算：保留原本的請假與人力試算。</div>
       <h2 style="margin-top:16px" data-i18n="todayConditions">生產條件</h2>
       <label data-i18n="queryDate">查詢日期</label><input id="queryDate" type="date">
-      <label data-i18n="productSearch">搜尋料號</label><input id="product" type="search" list="productOptions" autocomplete="off" placeholder="輸入料號搜尋"><datalist id="productOptions"></datalist>
-      <div id="quickAddProductWrap" class="mode-hidden" style="margin-top:9px"><button id="quickAddProduct" class="secondary" type="button">＋ 新增產品</button><div class="hint" style="margin-top:6px">可直接新增料號與基本需求人數，儲存後會自動選取。</div></div>
+      <label data-i18n="productSearch">搜尋產品名稱</label><input id="product" type="search" list="productOptions" autocomplete="off" placeholder="輸入產品名稱搜尋"><datalist id="productOptions"></datalist>
+      <div id="quickAddProductWrap" class="mode-hidden" style="margin-top:9px"><button id="quickAddProduct" class="secondary" type="button">＋ 新增產品</button><div class="hint" style="margin-top:6px">可直接新增產品名稱與基本需求人數，儲存後會自動選取。</div></div>
       <div class="normal-only"><label data-i18n="washMode">洗料模式</label>
         <div class="choice"><label><input type="radio" name="wash" value="1" checked><span data-i18n="washOne">洗1個</span></label><label><input type="radio" name="wash" value="2"><span data-i18n="washTwo">洗2個</span></label></div>
         <label data-i18n="specialProcess">特殊製程</label>
@@ -227,9 +227,9 @@
     <div class="card">
       <h2 data-i18n="productSettings">產品需求設定</h2>
       <div class="hint" data-i18n="productHint">基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。</div>
-      <div class="product-tools"><input id="productSettingsSearch" type="search" data-i18n-placeholder="productSearchPlaceholder" placeholder="搜尋料號"><button id="addProduct" class="secondary" data-i18n="addProduct">新增產品</button></div>
+      <div class="product-tools"><input id="productSettingsSearch" type="search" data-i18n-placeholder="productSearchPlaceholder" placeholder="搜尋產品名稱"><button id="addProduct" class="secondary" data-i18n="addProduct">新增產品</button></div>
       <div id="productCount" class="product-count"></div>
-      <div class="product-list"><div class="product-list-head"><span data-i18n="partNumber">料號</span><span data-i18n="basePeople">基本人數</span><span data-i18n="screwAdd">拆螺絲＋</span><span data-i18n="action">操作</span></div><div id="productSettings"></div></div>
+      <div class="product-list"><div class="product-list-head"><span data-i18n="partNumber">產品名稱</span><span data-i18n="basePeople">基本人數</span><span data-i18n="screwAdd">拆螺絲＋</span><span data-i18n="action">操作</span></div><div id="productSettings"></div></div>
     </div>
     <div class="card">
       <h2 data-i18n="specialRules">特殊規則</h2>
@@ -251,8 +251,8 @@
 <div id="productModal" class="product-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
   <form id="productForm" class="product-modal">
     <h2 id="productModalTitle">新增產品</h2>
-    <div class="hint" data-i18n="partNumberHint">料號不能與既有產品重複。</div>
-    <label for="productModalName" data-i18n="partNumber">料號</label><input id="productModalName" required autocomplete="off" data-i18n-placeholder="partNumberExample" placeholder="例如：6002AJ363010">
+    <div class="hint" data-i18n="partNumberHint">產品名稱不能與既有產品重複。</div>
+    <label for="productModalName" data-i18n="partNumber">產品名稱</label><input id="productModalName" required autocomplete="off" data-i18n-placeholder="partNumberExample" placeholder="例如：普萊德">
     <label for="productModalBase" data-i18n="basePeople">基本人數</label><input id="productModalBase" type="number" min="0" required>
     <label for="productModalScrew" data-i18n="screwAdd">拆螺絲＋</label><input id="productModalScrew" type="number" min="0" required>
     <div class="product-modal-actions"><button id="deleteModalProduct" class="danger" type="button" data-i18n="delete">刪除</button><div class="product-modal-right"><button id="cancelProductModal" class="secondary" type="button" data-i18n="cancel">取消</button><button class="primary" type="submit" style="margin-top:0" data-i18n="saveProduct">儲存產品</button></div></div>
@@ -480,7 +480,7 @@ const $=id=>document.getElementById(id);
 const translations={
   zh:{
     appTitle:'人力計算系統',tabCalc:'人力計算',tabSettings:'設定',tabRecords:'每日紀錄',
-    todayConditions:'生產條件',queryDate:'查詢日期',productSize:'產品尺寸',productSearch:'搜尋料號',washMode:'洗料模式',washOne:'洗1個',washTwo:'洗2個',
+    todayConditions:'生產條件',queryDate:'查詢日期',productSize:'產品尺寸',productSearch:'搜尋產品名稱',washMode:'洗料模式',washOne:'洗1個',washTwo:'洗2個',
     specialProcess:'特殊製程',jubaoPrint:'巨堡印刷（裝箱增加1人）',screwProcess:'鎖螺絲／拆螺絲',
     tempLeave:'今日臨時請假',tempLeaveHint:'每個日期分別儲存，可選上午、下午或全天請假。',todayLeaveTop:'今日請假（置頂）',clearTempLeave:'清除所選日期臨時請假',normal:'正常',leaveAM:'上午請假',leavePM:'下午請假',leaveFull:'全天請假',morning:'上午',afternoon:'下午',
     rangeLeave:'日期區間請假',rangeLeaveHint:'設定期間後會每天自動計入請假；結束日隔天自動恢復到班。',addRangeLeave:'新增區間請假',
@@ -489,7 +489,7 @@ const translations={
     calculate:'開始計算',resultTitle:'計算結果',studentsNeeded:'還需要學生',todayNeed:'今日需求',formalTotal:'正式員工總數',
     leaveCount:'全部請假人數',formalPresent:'正式員工實到',productionTotal:'一般作業員總數',paintTotal:'烤漆人員總數',productionPresent:'一般作業員實到',paintPresent:'烤漆人員實到',conditions:'計算條件',saveToday:'儲存所選日期人力',
     storageNotice:'所有設定會儲存在這台裝置的瀏覽器中。',productSettings:'產品需求設定',
-    productHint:'基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。',addProduct:'新增產品',saveProducts:'儲存產品設定',productSaved:'產品設定已儲存成功！',productSearchPlaceholder:'搜尋料號',partNumber:'料號',action:'操作',edit:'編輯',cancel:'取消',saveProduct:'儲存產品',productAddTitle:'新增產品',productEditTitle:'編輯產品',partNumberHint:'料號不能與既有產品重複。',partNumberExample:'例如：6002AJ363010',duplicatePartNumber:'這個料號已經存在',emptyProductSearch:'找不到符合的料號',productCount:n=>`共 ${n} 筆產品`,productFoundCount:(shown,total)=>`找到 ${shown} 筆／共 ${total} 筆產品`,
+    productHint:'基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。',addProduct:'新增產品',saveProducts:'儲存產品設定',productSaved:'產品設定已儲存成功！',productSearchPlaceholder:'搜尋產品名稱',partNumber:'產品名稱',action:'操作',edit:'編輯',cancel:'取消',saveProduct:'儲存產品',productAddTitle:'新增產品',productEditTitle:'編輯產品',partNumberHint:'產品名稱不能與既有產品重複。',partNumberExample:'例如：普萊德',duplicatePartNumber:'這個產品名稱已經存在',emptyProductSearch:'找不到符合的產品名稱',productCount:n=>`共 ${n} 筆產品`,productFoundCount:(shown,total)=>`找到 ${shown} 筆／共 ${total} 筆產品`,
     specialRules:'特殊規則',washTwoAdd:'洗2個增加人數',jubaoAdd:'巨堡印刷增加人數',saveRules:'儲存規則',
     employeeListTitle:'正式員工名單',addEmployee:'新增員工',saveEmployees:'儲存員工名單',employeeCategory:'分類',category1F:'1F',category2F:'2F',categoryPaint:'烤漆',
     clearRecords:'清除全部紀錄',emptyLeave:'尚未設定區間請假',rangeTag:'（區間請假）',
@@ -502,7 +502,7 @@ const translations={
   },
   vi:{
     appTitle:'Hệ thống tính nhân lực',tabCalc:'Tính nhân lực',tabSettings:'Cài đặt',tabRecords:'Lịch sử hằng ngày',
-    todayConditions:'Điều kiện sản xuất',queryDate:'Ngày tra cứu',productSize:'Kích thước sản phẩm',productSearch:'Tìm mã sản phẩm',washMode:'Chế độ rửa',washOne:'Rửa 1 bộ',washTwo:'Rửa 2 bộ',
+    todayConditions:'Điều kiện sản xuất',queryDate:'Ngày tra cứu',productSize:'Kích thước sản phẩm',productSearch:'Tìm tên sản phẩm',washMode:'Chế độ rửa',washOne:'Rửa 1 bộ',washTwo:'Rửa 2 bộ',
     specialProcess:'Công đoạn đặc biệt',jubaoPrint:'In Jubao (tăng 1 người đóng thùng)',screwProcess:'Vặn vít / tháo vít',
     tempLeave:'Nghỉ tạm thời',tempLeaveHint:'Mỗi ngày lưu riêng; có thể chọn nghỉ sáng, chiều hoặc cả ngày.',todayLeaveTop:'Người nghỉ hôm nay (ưu tiên)',clearTempLeave:'Xóa nghỉ tạm thời của ngày đã chọn',normal:'Đi làm',leaveAM:'Nghỉ sáng',leavePM:'Nghỉ chiều',leaveFull:'Nghỉ cả ngày',morning:'Buổi sáng',afternoon:'Buổi chiều',
     rangeLeave:'Nghỉ theo khoảng ngày',rangeLeaveHint:'Sau khi cài đặt, hệ thống tự tính nghỉ mỗi ngày; ngày sau khi kết thúc sẽ tự đi làm lại.',addRangeLeave:'Thêm nghỉ theo khoảng ngày',
@@ -511,7 +511,7 @@ const translations={
     calculate:'Bắt đầu tính',resultTitle:'Kết quả tính',studentsNeeded:'Số sinh viên cần thêm',todayNeed:'Nhu cầu hôm nay',formalTotal:'Tổng nhân viên chính thức',
     leaveCount:'Tổng số người nghỉ',formalPresent:'Nhân viên chính thức có mặt',productionTotal:'Tổng nhân viên sản xuất',paintTotal:'Tổng nhân viên sơn',productionPresent:'Nhân viên sản xuất có mặt',paintPresent:'Nhân viên sơn có mặt',conditions:'Điều kiện tính',saveToday:'Lưu nhân lực ngày đã chọn',
     storageNotice:'Mọi cài đặt được lưu trong trình duyệt của thiết bị này.',productSettings:'Cài đặt nhu cầu sản phẩm',
-    productHint:'Nhu cầu cơ bản lấy mốc: rửa 1 bộ, không Jubao, không tháo vít.',addProduct:'Thêm sản phẩm',saveProducts:'Lưu cài đặt sản phẩm',productSaved:'Đã lưu cài đặt sản phẩm thành công!',productSearchPlaceholder:'Tìm mã sản phẩm',partNumber:'Mã sản phẩm',action:'Thao tác',edit:'Sửa',cancel:'Hủy',saveProduct:'Lưu sản phẩm',productAddTitle:'Thêm sản phẩm',productEditTitle:'Sửa sản phẩm',partNumberHint:'Mã sản phẩm không được trùng với sản phẩm có sẵn.',partNumberExample:'Ví dụ: 6002AJ363010',duplicatePartNumber:'Mã sản phẩm này đã tồn tại',emptyProductSearch:'Không tìm thấy mã sản phẩm phù hợp',productCount:n=>`Tổng ${n} sản phẩm`,productFoundCount:(shown,total)=>`Tìm thấy ${shown}/${total} sản phẩm`,
+    productHint:'Nhu cầu cơ bản lấy mốc: rửa 1 bộ, không Jubao, không tháo vít.',addProduct:'Thêm sản phẩm',saveProducts:'Lưu cài đặt sản phẩm',productSaved:'Đã lưu cài đặt sản phẩm thành công!',productSearchPlaceholder:'Tìm tên sản phẩm',partNumber:'Tên sản phẩm',action:'Thao tác',edit:'Sửa',cancel:'Hủy',saveProduct:'Lưu sản phẩm',productAddTitle:'Thêm sản phẩm',productEditTitle:'Sửa sản phẩm',partNumberHint:'Tên sản phẩm không được trùng với sản phẩm có sẵn.',partNumberExample:'Ví dụ: Pride',duplicatePartNumber:'Tên sản phẩm này đã tồn tại',emptyProductSearch:'Không tìm thấy tên sản phẩm phù hợp',productCount:n=>`Tổng ${n} sản phẩm`,productFoundCount:(shown,total)=>`Tìm thấy ${shown}/${total} sản phẩm`,
     specialRules:'Quy tắc đặc biệt',washTwoAdd:'Số người tăng khi rửa 2 bộ',jubaoAdd:'Số người tăng khi in Jubao',saveRules:'Lưu quy tắc',
     employeeListTitle:'Danh sách nhân viên chính thức',addEmployee:'Thêm nhân viên',saveEmployees:'Lưu danh sách nhân viên',employeeCategory:'Phân loại',category1F:'1F',category2F:'2F',categoryPaint:'Sơn',
     clearRecords:'Xóa toàn bộ lịch sử',emptyLeave:'Chưa cài đặt nghỉ theo khoảng ngày',rangeTag:'（nghỉ theo khoảng ngày）',
@@ -748,7 +748,7 @@ function deleteEmployee(index){
 }
 
 function calc(){
- const p=data.products.find(x=>x.name===$('product').value.trim()); if(!p){alert('請從搜尋結果選擇正確料號');return}
+ const p=data.products.find(x=>x.name===$('product').value.trim()); if(!p){alert('請從搜尋結果選擇正確產品名稱');return}
  const wash=Number(document.querySelector('input[name=wash]:checked').value);
  const temp=loadTempAbsence();
  const range=new Set(activeLeaveNames());
@@ -812,7 +812,7 @@ function setCalcMode(mode){
  $('result').classList.remove('show');$('overtimeResult').classList.remove('show');
  if(normal){$('calcModeHint').textContent='目前是一般人力計算：保留原本的請假與人力試算。';return;}
  const all=mode==='all';
- $('calcModeHint').textContent=all?'全體加班：勾選今晚不加班的人，其他人視為加班；料號會自動帶入組裝需求人數。':'組裝加班：選擇料號後，自動帶出組裝需求人數；勾選今晚要加班的人來計算還差幾人。';
+ $('calcModeHint').textContent=all?'全體加班：勾選今晚不加班的人，其他人視為加班；產品名稱會自動帶入組裝需求人數。':'組裝加班：選擇產品名稱後，自動帶出組裝需求人數；勾選今晚要加班的人來計算還差幾人。';
  $('overtimeHint').textContent=all?'區間請假、全天請假與下午請假會自動扣除。烤漆／噴漆人員也會列入加班總人數。':'區間請假、全天請假與下午請假會自動扣除。烤漆／噴漆人員也會列入加班總人數。';
  $('overtimePeopleLabel').textContent=all?'今晚不加班的人（可複選）':'今晚要加班的人（可複選）';
  $('calculateOvertime').textContent=all?'計算全體加班人數':'計算組裝加班人力';
@@ -820,7 +820,7 @@ function setCalcMode(mode){
  renderOvertimeList();
 }
 function calcOvertime(){
- const p=data.products.find(x=>x.name===$('product').value.trim());if(!p){alert('請從搜尋結果選擇正確料號');return}
+ const p=data.products.find(x=>x.name===$('product').value.trim());if(!p){alert('請從搜尋結果選擇正確產品名稱');return}
  const all=calcMode==='all',temp=loadTempAbsence(),range=new Set(activeLeaveNames());
  const staff=data.employees.filter(name=>['1F','2F','烤漆'].includes(employeeCategory(name)));
  const selected=new Set([...document.querySelectorAll('[data-overtime-name]:checked')].map(input=>input.value));
@@ -837,7 +837,7 @@ function calcOvertime(){
 }
 
 function calcNightOvertime(){
- const p=data.products.find(x=>x.name===$('product').value.trim());if(!p){alert('請從搜尋結果選擇正確料號');return}
+ const p=data.products.find(x=>x.name===$('product').value.trim());if(!p){alert('請從搜尋結果選擇正確產品名稱');return}
  const wash=Number(document.querySelector('input[name=wash]:checked').value);
  const temp=loadTempAbsence();
  const range=new Set(activeLeaveNames());
