@@ -9,7 +9,7 @@
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}
     .app{max-width:760px;margin:auto;padding:14px 14px 60px}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}.top h1{font-size:22px;margin:0}.tag{font-size:12px;background:#fef3c7;color:#92400e;padding:6px 9px;border-radius:999px;font-weight:800;white-space:nowrap}
     .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}h2{font-size:18px;margin:0 0 8px}.hint{font-size:13px;color:var(--muted);line-height:1.55}label{display:block;font-size:14px;font-weight:800;margin:16px 0 7px}select,input[type=date]{width:100%;padding:13px 12px;border:1px solid #d1d5db;border-radius:12px;background:#fff;font-size:16px}
-    button{font:inherit;font-weight:800;cursor:pointer}.overtime-toggle{width:100%;border:0;border-radius:14px;background:var(--accent);color:#fff;padding:16px;font-size:18px}.overtime-toggle.open{background:#fff;color:var(--accent);border:2px solid var(--accent)}.panel{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:14px}.panel.show{display:block}.people{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}.person{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px}.person input{width:20px;height:20px}.person-name{font-weight:800}.primary{width:100%;border:0;border-radius:14px;background:var(--accent);color:#fff;padding:15px;font-size:17px;margin-top:14px}.result{display:none;margin-top:14px;background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:15px}.result.show{display:block}.big{text-align:center;font-size:42px;font-weight:900;margin:5px 0}.status{text-align:center;font-weight:800}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.stat{border:1px solid var(--line);border-radius:12px;padding:11px}.stat small{display:block;color:var(--muted)}.stat strong{font-size:23px}.note{font-size:12px;color:var(--muted);text-align:center;margin:15px 0 0}@media(max-width:480px){.people{grid-template-columns:1fr}}
+    button{font:inherit;font-weight:800;cursor:pointer}.overtime-toggle{width:100%;border:0;border-radius:14px;background:var(--accent);color:#fff;padding:16px;font-size:18px}.overtime-toggle.open{background:#fff;color:var(--accent);border:2px solid var(--accent)}.panel{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:14px}.panel.show{display:block}.people{display:flex;flex-direction:column;gap:10px;margin-top:8px}.employee-group{border:1px solid var(--line);border-radius:13px;padding:10px}.employee-group h3{margin:0 0 9px;padding-bottom:7px;border-bottom:2px solid;font-size:16px}.employee-group.one h3{color:#2563eb;border-color:#3b82f6}.employee-group.two h3{color:#0f9f9a;border-color:#14b8a6}.employee-group.paint h3{color:#ea580c;border-color:#f97316}.person-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.person{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:12px;padding:10px}.person input{width:20px;height:20px}.person-name{font-weight:800}.primary{width:100%;border:0;border-radius:14px;background:var(--accent);color:#fff;padding:15px;font-size:17px;margin-top:14px}.result{display:none;margin-top:14px;background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:15px}.result.show{display:block}.big{text-align:center;font-size:42px;font-weight:900;margin:5px 0}.status{text-align:center;font-weight:800}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.stat{border:1px solid var(--line);border-radius:12px;padding:11px}.stat small{display:block;color:var(--muted)}.stat strong{font-size:23px}.note{font-size:12px;color:var(--muted);text-align:center;margin:15px 0 0}@media(max-width:480px){.person-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -31,13 +31,15 @@
           <div id="status" class="status"></div>
           <div class="stats">
             <div class="stat"><small>晚上所需組裝人數</small><strong id="need">0</strong> 人</div>
-            <div class="stat"><small>可加班正式員工</small><strong id="available">0</strong> 人</div>
+            <div class="stat"><small>可加班 1F</small><strong id="available1F">0</strong> 人</div>
+            <div class="stat"><small>可加班 2F</small><strong id="available2F">0</strong> 人</div>
+            <div class="stat"><small>可加班烤漆</small><strong id="availablePaint">0</strong> 人</div>
             <div class="stat"><small>自動扣除請假</small><strong id="automatic">0</strong> 人</div>
             <div class="stat"><small>勾選不加班</small><strong id="manual">0</strong> 人</div>
           </div>
         </div>
       </div>
-      <p class="note">此樣品會使用你目前系統內的產品、1F／2F 員工與區間請假資料；不會寫入或變更正式資料。</p>
+      <p class="note">此樣品會使用你目前系統內的產品、1F／2F／烤漆員工與區間請假資料；學生缺額只依 1F＋2F 組裝人力計算，不會寫入或變更正式資料。</p>
     </section>
   </main>
   <script>
@@ -53,18 +55,25 @@
     function render(){
       $('sampleDate').value=today();
       $('product').innerHTML=(data.products||[]).map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
-      const people=(data.employees||[]).filter(name=>['1F','2F'].includes(category(name)));
-      $('people').innerHTML=people.length?people.map(name=>`<label class="person"><span class="person-name">${esc(name)}</span><input type="checkbox" value="${esc(name)}"></label>`).join(''):'<div class="hint">尚未讀到正式員工資料，請先到正式系統設定員工。</div>';
+      const groups=[['1F','1F','one'],['2F','2F','two'],['烤漆','烤漆','paint']];
+      const markup=groups.map(([id,title,style])=>{
+        const people=(data.employees||[]).filter(name=>category(name)===id);
+        if(!people.length)return '';
+        return `<section class="employee-group ${style}"><h3>${title}</h3><div class="person-grid">${people.map(name=>`<label class="person"><span class="person-name">${esc(name)}</span><input type="checkbox" value="${esc(name)}"></label>`).join('')}</div></section>`;
+      }).join('');
+      $('people').innerHTML=markup||'<div class="hint">尚未讀到正式員工資料，請先到正式系統設定員工。</div>';
     }
     function calculate(){
       const product=(data.products||[]).find(p=>p.id===$('product').value);if(!product)return;
-      const staff=(data.employees||[]).filter(name=>['1F','2F'].includes(category(name)));
+      const staff=(data.employees||[]).filter(name=>['1F','2F','烤漆'].includes(category(name)));
       const manual=new Set([...document.querySelectorAll('#people input:checked')].map(x=>x.value));
       const temp=tempAbsence(),range=rangeLeaveNames();
       const automatic=new Set(staff.filter(name=>range.has(name)||temp[name]==='pm'||temp[name]==='full'));
       const unavailable=new Set([...manual,...automatic]);
-      const available=staff.length-unavailable.size,need=Number(product.base)||0,missing=Math.max(0,need-available);
-      $('need').textContent=need;$('available').textContent=available;$('automatic').textContent=automatic.size;$('manual').textContent=[...manual].filter(name=>!automatic.has(name)).length;
+      const availableFor=group=>staff.filter(name=>category(name)===group&&!unavailable.has(name)).length;
+      const available1F=availableFor('1F'),available2F=availableFor('2F'),availablePaint=availableFor('烤漆');
+      const availableAssembly=available1F+available2F,need=Number(product.base)||0,missing=Math.max(0,need-availableAssembly);
+      $('need').textContent=need;$('available1F').textContent=available1F;$('available2F').textContent=available2F;$('availablePaint').textContent=availablePaint;$('automatic').textContent=automatic.size;$('manual').textContent=[...manual].filter(name=>!automatic.has(name)).length;
       $('missing').textContent=`${missing} 人`;$('missing').style.color=missing?'var(--bad)':'var(--ok)';
       $('status').textContent=missing?`晚上還需要 ${missing} 位學生`:'晚上人力足夠，不需要學生';$('status').style.color=missing?'var(--bad)':'var(--ok)';$('result').classList.add('show');
     }
