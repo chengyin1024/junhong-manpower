@@ -9,7 +9,7 @@
     :root{--bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--ok:#166534;--warn:#b45309;--bad:#b91c1c}
     *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
     .app{max-width:760px;margin:auto;padding:14px 14px 90px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}.top h1{font-size:22px;margin:0}.top-actions{display:flex;align-items:center;gap:7px}.lang-btn{border:1px solid #d1d5db;background:#fff;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800}.tag{font-size:12px;background:#e5e7eb;padding:5px 9px;border-radius:999px}
-    .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 6px;font-weight:700}.tab.active{background:var(--accent);color:#fff}.tab-link{display:block;color:var(--text);text-align:center;text-decoration:none}
+    .tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}.tab{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 6px;font-weight:700}.tab.active{background:var(--accent);color:#fff}.tab-link{display:block;color:var(--text);text-align:center;text-decoration:none}
     .panel{display:none}.panel.active{display:block}.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
     h2{font-size:17px;margin:0 0 14px}label{display:block;font-weight:700;margin:12px 0 7px}.hint{font-size:13px;color:var(--muted)}
     select,input[type=number],input[type=text],input[type=date]{width:100%;padding:13px 12px;border:1px solid #d1d5db;border-radius:12px;font-size:16px;background:#fff}
@@ -123,6 +123,7 @@
     <button class="tab" data-tab="settings" data-i18n="tabSettings">設定</button>
     <button class="tab" data-tab="records" data-i18n="tabRecords">每日紀錄</button>
     <a class="tab tab-link" href="overtime-sample.html" data-i18n="nightOvertime">晚上加班</a>
+    <a class="tab tab-link" href="saturday-overtime-sample.html" data-i18n="saturdayOvertime">星期六加班</a>
   </div>
 
   <section id="calc" class="panel active">
@@ -459,6 +460,7 @@ const translations={
     specialProcess:'特殊製程',jubaoPrint:'巨堡印刷（裝箱增加1人）',screwProcess:'鎖螺絲／拆螺絲',
     tempLeave:'今日臨時請假',tempLeaveHint:'每個日期分別儲存，可選上午、下午或全天請假。',todayLeaveTop:'今日請假（置頂）',clearTempLeave:'清除所選日期臨時請假',normal:'正常',leaveAM:'上午請假',leavePM:'下午請假',leaveFull:'全天請假',morning:'上午',afternoon:'下午',
     rangeLeave:'日期區間請假',rangeLeaveHint:'設定期間後會每天自動計入請假；結束日隔天自動恢復到班。',addRangeLeave:'新增區間請假',
+    saturdayOvertime:'星期六加班',
     nightOvertime:'晚上加班',nightOvertimeHint:'先勾選今晚不加班的人，再按計算。區間請假、全天請假與下午請假會自動扣除。',nightNoOvertime:'今晚不加班（可複選）',calculateNight:'計算晚上加班人數',nightResultTitle:'晚上加班結果',nightStudentsNeeded:'晚上還需要學生',nightNeed:'晚上所需組裝人數',nightAvailable:'可加班正式員工',nightAutoExcluded:'自動扣除請假',nightManualExcluded:'勾選不加班',nightNeedStudents:n=>`晚上還需要 ${n} 位學生`,nightEnough:'晚上人力足夠，不需要學生',
     calculate:'開始計算',resultTitle:'計算結果',studentsNeeded:'還需要學生',todayNeed:'今日需求',formalTotal:'正式員工總數',
     leaveCount:'全部請假人數',formalPresent:'正式員工實到',productionTotal:'一般作業員總數',paintTotal:'烤漆人員總數',productionPresent:'一般作業員實到',paintPresent:'烤漆人員實到',conditions:'計算條件',saveToday:'儲存所選日期人力',
@@ -480,6 +482,7 @@ const translations={
     specialProcess:'Công đoạn đặc biệt',jubaoPrint:'In Jubao (tăng 1 người đóng thùng)',screwProcess:'Vặn vít / tháo vít',
     tempLeave:'Nghỉ tạm thời',tempLeaveHint:'Mỗi ngày lưu riêng; có thể chọn nghỉ sáng, chiều hoặc cả ngày.',todayLeaveTop:'Người nghỉ hôm nay (ưu tiên)',clearTempLeave:'Xóa nghỉ tạm thời của ngày đã chọn',normal:'Đi làm',leaveAM:'Nghỉ sáng',leavePM:'Nghỉ chiều',leaveFull:'Nghỉ cả ngày',morning:'Buổi sáng',afternoon:'Buổi chiều',
     rangeLeave:'Nghỉ theo khoảng ngày',rangeLeaveHint:'Sau khi cài đặt, hệ thống tự tính nghỉ mỗi ngày; ngày sau khi kết thúc sẽ tự đi làm lại.',addRangeLeave:'Thêm nghỉ theo khoảng ngày',
+    saturdayOvertime:'Tăng ca thứ Bảy',
     nightOvertime:'Tăng ca buổi tối',nightOvertimeHint:'Chọn người không tăng ca tối nay rồi bấm tính. Nghỉ theo khoảng ngày, nghỉ cả ngày và nghỉ chiều sẽ tự động trừ.',nightNoOvertime:'Không tăng ca tối nay (có thể chọn nhiều)',calculateNight:'Tính nhân lực tăng ca tối',nightResultTitle:'Kết quả tăng ca buổi tối',nightStudentsNeeded:'Sinh viên cần thêm buổi tối',nightNeed:'Số người lắp ráp cần buổi tối',nightAvailable:'Nhân viên chính thức có thể tăng ca',nightAutoExcluded:'Tự trừ người nghỉ',nightManualExcluded:'Đã chọn không tăng ca',nightNeedStudents:n=>`Buổi tối cần thêm ${n} sinh viên`,nightEnough:'Nhân lực buổi tối đủ, không cần sinh viên',
     calculate:'Bắt đầu tính',resultTitle:'Kết quả tính',studentsNeeded:'Số sinh viên cần thêm',todayNeed:'Nhu cầu hôm nay',formalTotal:'Tổng nhân viên chính thức',
     leaveCount:'Tổng số người nghỉ',formalPresent:'Nhân viên chính thức có mặt',productionTotal:'Tổng nhân viên sản xuất',paintTotal:'Tổng nhân viên sơn',productionPresent:'Nhân viên sản xuất có mặt',paintPresent:'Nhân viên sơn có mặt',conditions:'Điều kiện tính',saveToday:'Lưu nhân lực ngày đã chọn',
