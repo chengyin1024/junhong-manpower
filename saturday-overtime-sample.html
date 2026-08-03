@@ -12,14 +12,14 @@
   <main class="app">
     <div class="top"><div><h1>人力計算系統</h1><div class="hint">星期六加班操作樣品</div></div><span class="tag">樣品，不影響正式資料</span></div>
     <section class="card">
-      <h2>人力計算</h2><div class="hint">有星期六加班時才按下面按鈕，展開後選下班時間與實際上班人員。</div>
+      <h2>人力計算</h2><div class="hint">有星期六加班時才按下面按鈕；先勾選實際上班人員，最後再決定下班時間並送出。</div>
       <button id="toggle" class="toggle" type="button">星期六加班</button>
       <div id="panel" class="panel">
         <label for="date">星期六日期</label><input id="date" type="date">
-        <label>下班時間</label><div class="choice"><label><input type="radio" name="finish" value="下午 3:00" checked><span>下午 3:00 下班</span></label><label><input type="radio" name="finish" value="下午 5:00"><span>下午 5:00 下班</span></label></div>
         <label>星期六上班人員（可複選）</label><div id="people" class="people"></div>
-        <button id="calculate" class="primary" type="button">計算星期六加班</button>
-        <div id="result" class="result"><div class="status">本次加班總人數</div><div id="totalBig" class="big">0 人</div><div id="finishSummary" class="finish-summary"></div><div class="stats"><div class="stat"><small>1F 加班人數</small><strong id="count1F">0</strong> 人</div><div class="stat"><small>2F 加班人數</small><strong id="count2F">0</strong> 人</div><div class="stat"><small>烤漆加班人數</small><strong id="countPaint">0</strong> 人</div><div class="stat"><small>下班時間</small><strong id="finishTime" style="font-size:18px">--</strong></div></div></div>
+        <label>最後確認下班時間</label><div class="choice"><label><input type="radio" name="finish" value="下午 3:00"><span>下午 3:00 下班</span></label><label><input type="radio" name="finish" value="下午 5:00"><span>下午 5:00 下班</span></label></div>
+        <button id="submit" class="primary" type="button">完成送出</button>
+        <div id="result" class="result"><div class="status" style="color:var(--ok)">本次星期六加班已送出</div><div class="status" style="margin-top:7px">加班總人數</div><div id="totalBig" class="big">0 人</div><div id="finishSummary" class="finish-summary"></div><div class="stats"><div class="stat"><small>1F 加班人數</small><strong id="count1F">0</strong> 人</div><div class="stat"><small>2F 加班人數</small><strong id="count2F">0</strong> 人</div><div class="stat"><small>烤漆加班人數</small><strong id="countPaint">0</strong> 人</div><div class="stat"><small>下班時間</small><strong id="finishTime" style="font-size:18px">--</strong></div></div></div>
       </div>
       <p class="note">星期六預設全員不上班；勾選實際上班的人後，系統只統計加班人數與下班時間，不計算學生需求。</p>
     </section>
@@ -29,8 +29,8 @@
     const $=id=>document.getElementById(id);const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};const esc=s=>String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     const data=JSON.parse(localStorage.getItem('manpowerV1Data')||'null')||defaults;const category=name=>data.employeeCategories?.[name]||'1F';
     function render(){$('date').value=today();const groups=[['1F','1F','one'],['2F','2F','two'],['烤漆','烤漆','paint']];const markup=groups.map(([id,title,style])=>{const people=(data.employees||[]).filter(name=>category(name)===id);if(!people.length)return '';return `<section class="employee-group ${style}"><h3>${title}</h3><div class="person-grid">${people.map(name=>`<label class="person"><span class="person-name">${esc(name)}<span class="area-badge ${style}">${title}</span></span><input type="checkbox" value="${esc(name)}"></label>`).join('')}</div></section>`}).join('');$('people').innerHTML=markup||'<div class="hint">尚未讀到正式員工資料，請先到正式系統設定員工。</div>'}
-    function calculateSaturdayOvertime(){const working=[...document.querySelectorAll('#people input:checked')].map(x=>x.value),countFor=group=>working.filter(name=>category(name)===group).length,finish=document.querySelector('input[name=finish]:checked').value;$('totalBig').textContent=`${working.length} 人`;$('totalBig').style.color='var(--ok)';$('count1F').textContent=countFor('1F');$('count2F').textContent=countFor('2F');$('countPaint').textContent=countFor('烤漆');$('finishTime').textContent=finish;$('finishSummary').textContent=`本次預計 ${finish} 下班`;$('result').classList.add('show')}
-    $('toggle').onclick=()=>{const open=$('panel').classList.toggle('show');$('toggle').classList.toggle('open',open);$('toggle').textContent=open?'收起星期六加班':'星期六加班'};$('calculate').onclick=calculateSaturdayOvertime;render();
+    function submitSaturdayOvertime(){const working=[...document.querySelectorAll('#people input:checked')].map(x=>x.value),finish=document.querySelector('input[name=finish]:checked')?.value;if(!working.length){alert('請先勾選星期六上班人員');return}if(!finish){alert('請先選擇下班時間');return}const countFor=group=>working.filter(name=>category(name)===group).length,record={id:Date.now(),date:$('date').value,finish,people:working,count1F:countFor('1F'),count2F:countFor('2F'),countPaint:countFor('烤漆')},records=JSON.parse(localStorage.getItem('manpowerV1SaturdayOvertimeSampleRecords')||'[]');records.unshift(record);localStorage.setItem('manpowerV1SaturdayOvertimeSampleRecords',JSON.stringify(records.slice(0,100)));$('totalBig').textContent=`${working.length} 人`;$('totalBig').style.color='var(--ok)';$('count1F').textContent=record.count1F;$('count2F').textContent=record.count2F;$('countPaint').textContent=record.countPaint;$('finishTime').textContent=finish;$('finishSummary').textContent=`本次預計 ${finish} 下班`;$('result').classList.add('show')}
+    $('toggle').onclick=()=>{const open=$('panel').classList.toggle('show');$('toggle').classList.toggle('open',open);$('toggle').textContent=open?'收起星期六加班':'星期六加班'};$('submit').onclick=submitSaturdayOvertime;render();
   </script>
 </body>
 </html>
