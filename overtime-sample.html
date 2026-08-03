@@ -28,7 +28,7 @@
         </div>
         <div id="modeHint" class="hint" style="margin-top:8px">全體加班：可勾選 1F、2F、烤漆不加班人員。</div>
         <label for="product">產品</label><select id="product"></select>
-        <label>今晚不加班的人（可複選）</label>
+        <label id="peopleLabel">今晚不加班的人（可複選）</label>
         <div id="people" class="people"></div>
         <button id="calculate" class="primary" type="button">計算晚上加班人數</button>
         <div id="result" class="result">
@@ -41,7 +41,7 @@
             <div class="stat"><small>可加班 2F</small><strong id="available2F">0</strong> 人</div>
             <div class="stat"><small id="paintLabel">可加班烤漆</small><strong id="availablePaint">0</strong> 人</div>
             <div class="stat"><small>自動扣除請假</small><strong id="automatic">0</strong> 人</div>
-            <div class="stat"><small>勾選不加班</small><strong id="manual">0</strong> 人</div>
+            <div class="stat"><small id="manualLabel">勾選不加班</small><strong id="manual">0</strong> 人</div>
           </div>
         </div>
       </div>
@@ -77,11 +77,11 @@
       const manual=new Set([...document.querySelectorAll('#people input:checked')].map(x=>x.value));
       const temp=tempAbsence(),range=rangeLeaveNames();
       const automatic=new Set(staff.filter(name=>range.has(name)||temp[name]==='pm'||temp[name]==='full'));
-      const unavailable=new Set([...manual,...automatic]);
-      const availableFor=group=>staff.filter(name=>category(name)===group&&!unavailable.has(name)).length;
+      const unavailable=overtimeMode==='all'?new Set([...manual,...automatic]):automatic;
+      const availableFor=group=>staff.filter(name=>category(name)===group&&(overtimeMode==='all'?!unavailable.has(name):manual.has(name)&&!automatic.has(name))).length;
       const available1F=availableFor('1F'),available2F=availableFor('2F'),availablePaint=availableFor('烤漆');
       const availableAssembly=available1F+available2F,need=Number(product.base)||0,missing=Math.max(0,need-availableAssembly);
-      $('need').textContent=need;$('available1F').textContent=available1F;$('available2F').textContent=available2F;$('availablePaint').textContent=availablePaint;$('paintLabel').textContent=overtimeMode==='all'?'可加班烤漆':'烤漆（未列入）';$('automatic').textContent=automatic.size;$('manual').textContent=[...manual].filter(name=>!automatic.has(name)).length;
+      $('need').textContent=need;$('available1F').textContent=available1F;$('available2F').textContent=available2F;$('availablePaint').textContent=availablePaint;$('paintLabel').textContent=overtimeMode==='all'?'可加班烤漆':'烤漆（未列入）';$('automatic').textContent=automatic.size;$('manualLabel').textContent=overtimeMode==='all'?'勾選不加班':'勾選加班';$('manual').textContent=[...manual].filter(name=>!automatic.has(name)).length;
       $('missing').textContent=`${missing} 人`;$('missing').style.color=missing?'var(--bad)':'var(--ok)';
       $('status').textContent=missing?`晚上還需要 ${missing} 位學生`:'晚上人力足夠，不需要學生';$('status').style.color=missing?'var(--bad)':'var(--ok)';$('result').classList.add('show');
     }
@@ -89,7 +89,10 @@
     document.querySelectorAll('.mode-btn').forEach(button=>button.onclick=()=>{
       overtimeMode=button.dataset.mode;
       document.querySelectorAll('.mode-btn').forEach(item=>item.classList.toggle('active',item===button));
-      $('modeHint').textContent=overtimeMode==='all'?'全體加班：可勾選 1F、2F、烤漆不加班人員。':'組裝加班：只計算並顯示 1F、2F 組裝人員。';
+      const all=overtimeMode==='all';
+      $('modeHint').textContent=all?'全體加班：勾選今晚不加班的人，其他人視為加班。':'組裝加班：只顯示 1F、2F，請直接勾選今晚要加班的人。';
+      $('peopleLabel').textContent=all?'今晚不加班的人（可複選）':'今晚要加班的人（可複選）';
+      $('manualLabel').textContent=all?'勾選不加班':'勾選加班';
       $('result').classList.remove('show');
       render();
     });
