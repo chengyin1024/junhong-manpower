@@ -11,6 +11,9 @@ create table if not exists public.manpower_saturday_overtime_records (
 alter table public.manpower_saturday_overtime_records
   add column if not exists product_name text;
 
+alter table public.manpower_saturday_overtime_records
+  add column if not exists deleted_at timestamptz;
+
 create index if not exists manpower_saturday_overtime_records_status_date_idx
   on public.manpower_saturday_overtime_records (status, work_date desc);
 
