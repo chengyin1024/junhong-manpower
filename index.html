@@ -719,13 +719,18 @@ function openProductModal(id=null,selectAfterSave=false){
  $('productModal').classList.add('show');setTimeout(()=>$('productModalName').focus(),0);
 }
 function closeProductModal(){$('productModal').classList.remove('show');editingProductId=null;selectProductAfterSave=false}
-function saveProductModal(){
+async function saveProductModal(){
  const name=$('productModalName').value.trim();if(!name)return;
  if(data.products.some(p=>String(p.name).toLowerCase()===name.toLowerCase()&&p.id!==editingProductId)){alert(tr('duplicatePartNumber'));return}
  const shouldSelectProduct=selectProductAfterSave;
  const payload={id:editingProductId||`p${Date.now()}`,name,base:Math.max(0,Number($('productModalBase').value)||0),screwAdd:Math.max(0,Number($('productModalScrew').value)||0)};
  if(editingProductId)Object.assign(data.products.find(p=>p.id===editingProductId),payload);else data.products.push(payload);
- sortProducts();persist();closeProductModal();renderSettings();renderCalc();if(shouldSelectProduct){$('product').value=name;renderOvertimeList();updateAssemblyNeedPreview();}showToast(tr('productSaved'));
+ sortProducts();persist();closeProductModal();renderSettings();renderCalc();if(shouldSelectProduct){$('product').value=name;renderOvertimeList();updateAssemblyNeedPreview();}
+ if(!cloudReady){showToast('產品已儲存在本機；連上雲端後請按「同步到雲端」');return}
+ showToast('產品已儲存，正在同步到雲端…');
+ const synced=await uploadCloud(true);
+ if(synced){markManualSynced();showToast('產品已儲存到設定與雲端');}
+ else showToast('產品已儲存在本機；雲端同步失敗，請稍後再按「同步到雲端」');
 }
 function deleteModalProduct(){
  const product=data.products.find(p=>p.id===editingProductId);if(!product||!confirm(tr('confirmDelete')))return;
@@ -958,8 +963,8 @@ async function uploadCloud(silent=false){
    await replaceTable('manpower_temp_absences',tempRows);
    await replaceTable('manpower_daily_records',records);
   } finally {applyingRemote=false;}
-  setCloudStatus('雲端同步正常','online');markSynced();if(!silent)showToast('已上傳雲端');
- }catch(err){applyingRemote=false;setCloudStatus('同步失敗：'+err.message,'error');if(!silent)alert('上傳失敗：'+err.message)}
+  setCloudStatus('雲端同步正常','online');markSynced();if(!silent)showToast('已上傳雲端');return true;
+ }catch(err){applyingRemote=false;setCloudStatus('同步失敗：'+err.message,'error');if(!silent)alert('上傳失敗：'+err.message);return false}
 }
 async function downloadCloud(silent=false){
  if(!cloudReady)return false;
@@ -1053,8 +1058,9 @@ async function connectCloud(auto=false){
   cloudReady=true;setCloudStatus('已連線，正在取得資料…','syncing');
   for(const ch of cloudChannels)await cloudClient.removeChannel(ch);cloudChannels=[];
   // 手動同步版：不訂閱即時變更，避免操作途中自動重畫畫面。
-  const gotCloudData=await downloadCloud(true);
-  if(!gotCloudData){setCloudStatus('雲端同步正常','online');}
+  // 本機有尚未同步的修改時，不能下載雲端舊資料覆蓋它。
+  const gotCloudData=manualDirty?false:await downloadCloud(true);
+  if(!gotCloudData){setCloudStatus(manualDirty?'雲端已連線，等待本機資料同步':'雲端同步正常',manualDirty?'syncing':'online');}
   if(!auto)showToast('雲端連線成功');
  }catch(err){
   cloudReady=false;
