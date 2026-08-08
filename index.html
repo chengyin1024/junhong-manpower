@@ -160,7 +160,7 @@
             <button id="manualDownload" class="secondary" type="button" style="margin:0">讀取最新資料</button>
           </div>
         </div>
-        <div class="hint" style="margin-top:6px">勾選後會立即保存在這台裝置；按「同步到雲端」後，另一台再按「讀取最新資料」。</div>
+        <div class="hint" style="margin-top:6px">修改會先保存在這台裝置，再自動同步到雲端；另一台開啟或回到頁面後會自動更新。按鈕可用來立即同步。</div>
       </div>
       <div id="employeeList" class="employee-sections" style="margin-top:10px"></div>
       <button id="clearAbsence" class="secondary" style="margin-top:10px"><span data-i18n="clearTempLeave">清除所選日期臨時請假</span></button>
@@ -214,9 +214,9 @@
           <div class="cloud-status" style="margin:0"><span id="cloudDot" class="cloud-dot"></span><span id="cloudStatus">正在連線…</span></div>
           <div id="lastSyncTime" class="cloud-meta">最後同步：尚未同步</div>
         </div>
-        <span class="tag">手動</span>
+        <span class="tag">自動</span>
       </div>
-      <div class="cloud-note">系統開啟後會連線並讀取一次資料；之後不會自動刷新畫面。修改完成請按「同步到雲端」，查看端請按「下載雲端資料」。</div>
+      <div class="cloud-note">資料儲存後會自動同步到雲端；其他手機或電腦會在回到頁面時立即更新，開啟期間也會定時取得最新資料。下方手動工具保留作為備援。</div>
       <details class="cloud-admin">
         <summary>管理員雲端工具</summary>
         <div class="cloud-actions" style="margin-top:10px">
@@ -727,11 +727,11 @@ async function saveProductModal(){
  const payload={id:editingProductId||`p${Date.now()}`,name,base:Math.max(0,Number($('productModalBase').value)||0),screwAdd:Math.max(0,Number($('productModalScrew').value)||0)};
  if(editingProductId)Object.assign(data.products.find(p=>p.id===editingProductId),payload);else data.products.push(payload);
  sortProducts();persist();closeProductModal();renderSettings();renderCalc();if(shouldSelectProduct){$('product').value=name;renderOvertimeList();updateAssemblyNeedPreview();}
- if(!cloudReady){showToast('產品已儲存在本機；連上雲端後請按「同步到雲端」');return}
+ if(!cloudReady){showToast('產品已儲存在本機；恢復連線後會自動同步');return}
  showToast('產品已儲存，正在同步到雲端…');
  const synced=await uploadCloud(true);
  if(synced){markManualSynced();showToast('產品已儲存到設定與雲端');}
- else showToast('產品已儲存在本機；雲端同步失敗，請稍後再按「同步到雲端」');
+ else showToast('產品已儲存在本機；恢復連線後會自動重試');
 }
 function deleteModalProduct(){
  const product=data.products.find(p=>p.id===editingProductId);if(!product||!confirm(tr('confirmDelete')))return;
@@ -1028,6 +1028,14 @@ function markManualSynced(){
 function scheduleCloudUpload(){
  if(applyingRemote)return;
  markManualDirty();
+ clearTimeout(cloudTimer);
+ if(!cloudReady||!navigator.onLine)return;
+ cloudTimer=setTimeout(async()=>{
+  if(!cloudReady||applyingRemote||!manualDirty)return;
+  setCloudStatus('正在自動同步…','syncing');
+  const ok=await uploadCloud(true);
+  if(ok){markManualSynced();showToast('已自動同步到雲端');}
+ },1000);
 }
 function scheduleRemoteDownload(){
  if(!cloudReady||applyingRemote)return;
@@ -1058,10 +1066,12 @@ async function connectCloud(auto=false){
   }
   cloudReady=true;setCloudStatus('已連線，正在取得資料…','syncing');
   for(const ch of cloudChannels)await cloudClient.removeChannel(ch);cloudChannels=[];
-  // 手動同步版：不訂閱即時變更，避免操作途中自動重畫畫面。
-  // 本機有尚未同步的修改時，不能下載雲端舊資料覆蓋它。
-  const gotCloudData=manualDirty?false:await downloadCloud(true);
-  if(!gotCloudData){setCloudStatus(manualDirty?'雲端已連線，等待本機資料同步':'雲端同步正常',manualDirty?'syncing':'online');}
+  let synced=false;
+  if(manualDirty){
+   synced=await uploadCloud(true);
+   if(synced)markManualSynced();
+  }else synced=await downloadCloud(true);
+  if(!synced)setCloudStatus('雲端已連線','online');
   if(!auto)showToast('雲端連線成功');
  }catch(err){
   cloudReady=false;
@@ -1104,8 +1114,17 @@ function initCloudUI(){
  updateManualSaveStatus();
  window.addEventListener('online',()=>{setCloudStatus('網路已恢復，正在重新連線…','syncing');resetCloudConnection();});
  window.addEventListener('offline',()=>{cloudReady=false;setCloudStatus('目前離線，資料暫存於此裝置','error');});
- document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!cloudReady&&navigator.onLine&&!manualDirty)resetCloudConnection();});
- setInterval(()=>{if(!cloudReady&&navigator.onLine)connectCloud(true)},15000);
+ document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState!=='visible'||!navigator.onLine)return;
+  if(!cloudReady){resetCloudConnection();return;}
+  if(manualDirty)scheduleCloudUpload();else downloadCloud(true);
+ });
+ setInterval(()=>{
+  if(!navigator.onLine)return;
+  if(!cloudReady){connectCloud(true);return;}
+  if(manualDirty){scheduleCloudUpload();return;}
+  if(document.visibilityState==='visible'&&!document.activeElement?.matches('input,select,textarea'))downloadCloud(true);
+ },10000);
  connectCloud(true);
 }
 
