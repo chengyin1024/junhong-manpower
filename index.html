@@ -669,9 +669,11 @@ function renderSettings(){
  }).join('');
 }
 function renderRecords(){
+ const wrap=$('recordWrap');
+ if(!wrap)return;
  const records=JSON.parse(localStorage.getItem('manpowerV1Records')||'[]');
- if(!records.length){$('recordWrap').innerHTML=`<div class="empty">${tr('emptyRecords')}</div>`;return}
- $('recordWrap').innerHTML=`<table><thead><tr><th>${tr('date')}</th><th>${tr('product')}</th><th>${tr('need')}</th><th>${tr('present')}</th><th>${tr('missingStudent')}</th></tr></thead><tbody>${records.map(r=>`<tr><td>${r.date}</td><td>${esc(r.product)}</td><td>${r.need}</td><td>${r.totalPresent}</td><td>${r.missing}</td></tr>`).join('')}</tbody></table>`;
+ if(!records.length){wrap.innerHTML=`<div class="empty">${tr('emptyRecords')}</div>`;return}
+ wrap.innerHTML=`<table><thead><tr><th>${tr('date')}</th><th>${tr('product')}</th><th>${tr('need')}</th><th>${tr('present')}</th><th>${tr('missingStudent')}</th></tr></thead><tbody>${records.map(r=>`<tr><td>${r.date}</td><td>${esc(r.product)}</td><td>${r.need}</td><td>${r.totalPresent}</td><td>${r.missing}</td></tr>`).join('')}</tbody></table>`;
 }
 
 function updateResultText(){
