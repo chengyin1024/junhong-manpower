@@ -160,7 +160,7 @@
             <button id="manualDownload" class="secondary" type="button" style="margin:0">讀取最新資料</button>
           </div>
         </div>
-        <div class="hint" style="margin-top:6px">修改會先保存在這台裝置，再自動同步到雲端；另一台開啟或回到頁面後會自動更新。按鈕可用來立即同步。</div>
+        <div class="hint" style="margin-top:6px">修改會先保存在這台裝置，再自動同步到雲端；另一台通常會立即更新，最慢約 3 秒內跟上。按鈕可用來立即同步。</div>
       </div>
       <div id="employeeList" class="employee-sections" style="margin-top:10px"></div>
       <button id="clearAbsence" class="secondary" style="margin-top:10px"><span data-i18n="clearTempLeave">清除所選日期臨時請假</span></button>
@@ -216,7 +216,7 @@
         </div>
         <span class="tag">自動</span>
       </div>
-      <div class="cloud-note">資料儲存後會自動同步到雲端；其他手機或電腦會在回到頁面時立即更新，開啟期間也會定時取得最新資料。下方手動工具保留作為備援。</div>
+      <div class="cloud-note">資料儲存後會自動同步到雲端；其他手機或電腦會即時接收更新，並每 2.5 秒備援檢查，最慢約 3 秒內跟上。下方手動工具保留作為備援。</div>
       <details class="cloud-admin">
         <summary>管理員雲端工具</summary>
         <div class="cloud-actions" style="margin-top:10px">
@@ -1037,7 +1037,7 @@ function scheduleCloudUpload(){
   setCloudStatus('正在自動同步…','syncing');
   const ok=await uploadCloud(true);
   if(ok){markManualSynced();showToast('已自動同步到雲端');}
- },1000);
+ },500);
 }
 function scheduleRemoteDownload(){
  if(!cloudReady||applyingRemote)return;
@@ -1068,6 +1068,12 @@ async function connectCloud(auto=false){
   }
   cloudReady=true;setCloudStatus('已連線，正在取得資料…','syncing');
   for(const ch of cloudChannels)await cloudClient.removeChannel(ch);cloudChannels=[];
+  for(const table of CLOUD_TABLES){
+   const channel=cloudClient.channel(`manpower-auto-${table}`)
+    .on('postgres_changes',{event:'*',schema:'public',table},()=>scheduleRemoteDownload())
+    .subscribe();
+   cloudChannels.push(channel);
+  }
   let synced=false;
   if(manualDirty){
    synced=await uploadCloud(true);
@@ -1126,7 +1132,7 @@ function initCloudUI(){
   if(!cloudReady){connectCloud(true);return;}
   if(manualDirty){scheduleCloudUpload();return;}
   if(document.visibilityState==='visible'&&!document.activeElement?.matches('input,select,textarea'))downloadCloud(true);
- },10000);
+ },2500);
  connectCloud(true);
 }
 
