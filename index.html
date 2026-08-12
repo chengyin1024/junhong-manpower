@@ -823,6 +823,25 @@ function calc(){
  $('missingBig').style.color=(missingMorning||missingAfternoon)?'var(--bad)':'var(--ok)';
  $('result').classList.add('show');$('result').scrollIntoView({behavior:'smooth'});
 }
+async function saveEmployeeDirectory(){
+  syncEmployeeInputs();
+  persist();
+  renderSettings();
+  renderCalc();
+  if(!cloudReady||!navigator.onLine){
+    showToast('員工名單已暫存在本機；恢復網路後會自動同步');
+    return false;
+  }
+  showToast('正在儲存員工名單到雲端…');
+  const synced=await uploadCloud(true);
+  if(synced){
+    markManualSynced();
+    showToast('員工名單已儲存到雲端');
+    return true;
+  }
+  showToast('雲端儲存失敗，請稍後再按一次儲存');
+  return false;
+}
 
 function setCalcMode(mode){
  calcMode=mode;
@@ -1184,7 +1203,7 @@ $('productForm').onsubmit=e=>{e.preventDefault();saveProductModal()};
 $('deleteModalProduct').onclick=deleteModalProduct;
 $('saveRules').onclick=()=>{data.rules.wash2Add=Math.max(0,+$('wash2Add').value||0);data.rules.jubaoAdd=Math.max(0,+$('jubaoAdd').value||0);persist();renderSettings();renderCalc();showToast(tr('saved'))};
 $('addEmployee').onclick=()=>{syncEmployeeInputs();let base=tr('newEmployee'),name=base,n=2;while(data.employees.includes(name))name=`${base}${n++}`;data.employees.push(name);data.employeeCategories??={};data.employeeCategories[name]='1F';persist();renderSettings();renderCalc();showToast(tr('added'))};
-$('saveEmployees').onclick=()=>{syncEmployeeInputs();persist();renderSettings();renderCalc();showToast(tr('saved'))};
+$('saveEmployees').onclick=()=>saveEmployeeDirectory();
 $('queryDate').value=todayISO();
 applyLanguage();
 setCalcMode('normal');
