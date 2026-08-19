@@ -732,6 +732,7 @@ function syncEmployeeInputs(){
   data.employees.forEach(name=>data.employeeCategories[name]=nextCategories[name]||'1F');
 }
 let editingProductId=null,selectProductAfterSave=false;
+function isProductModalOpen(){return $('productModal')?.classList.contains('show')}
 function sortProducts(){data.products.sort((a,b)=>String(a.name).localeCompare(String(b.name),'zh-Hant',{numeric:true,sensitivity:'base'}))}
 function openProductModal(id=null,selectAfterSave=false){
  editingProductId=id;
@@ -742,7 +743,10 @@ function openProductModal(id=null,selectAfterSave=false){
  $('deleteModalProduct').style.visibility=product?'visible':'hidden';
  $('productModal').classList.add('show');setTimeout(()=>$('productModalName').focus(),0);
 }
-function closeProductModal(){$('productModal').classList.remove('show');editingProductId=null;selectProductAfterSave=false}
+function closeProductModal(){
+ $('productModal').classList.remove('show');editingProductId=null;selectProductAfterSave=false;
+ if(cloudReady&&!manualDirty)scheduleRemoteDownload();
+}
 async function saveProductModal(){
  const name=$('productModalName').value.trim();if(!name)return;
  if(data.products.some(p=>String(p.name).toLowerCase()===name.toLowerCase()&&p.id!==editingProductId)){alert(tr('duplicatePartNumber'));return}
@@ -1010,7 +1014,7 @@ async function uploadCloud(silent=false){
  }catch(err){applyingRemote=false;setCloudStatus('同步失敗：'+err.message,'error');if(!silent)alert('上傳失敗：'+err.message);return false}
 }
 async function downloadCloud(silent=false){
- if(!cloudReady)return false;
+ if(!cloudReady||isProductModalOpen())return false;
  try{
   const [settingsR,productsR,employeesR,leavesR,tempR,recordsR]=await Promise.all([
    cloudClient.from('manpower_settings').select('*').eq('id','main').maybeSingle(),
@@ -1021,6 +1025,7 @@ async function downloadCloud(silent=false){
    cloudClient.from('manpower_daily_records').select('*').order('created_at',{ascending:false}).limit(365)
   ]);
   for(const r of [settingsR,productsR,employeesR,leavesR,tempR,recordsR])if(r.error)throw r.error;
+  if(isProductModalOpen())return false;
   const hasCloudData=(productsR.data?.length||employeesR.data?.length||leavesR.data?.length||tempR.data?.length||recordsR.data?.length);
   if(!hasCloudData){if(!silent)showToast('雲端尚無資料');return false;}
   applyingRemote=true;
@@ -1080,7 +1085,7 @@ function scheduleCloudUpload(){
  },500);
 }
 function scheduleRemoteDownload(){
- if(!cloudReady||applyingRemote)return;
+ if(!cloudReady||applyingRemote||isProductModalOpen())return;
  clearTimeout(remoteTimer);remoteTimer=setTimeout(()=>downloadCloud(true),700);
 }
 async function connectCloud(auto=false){
@@ -1164,7 +1169,7 @@ function initCloudUI(){
   if(!navigator.onLine)return;
   if(!cloudReady){connectCloud(true);return;}
   if(manualDirty){scheduleCloudUpload();return;}
-  if(document.visibilityState==='visible'&&!document.activeElement?.matches('input,select,textarea'))downloadCloud(true);
+  if(document.visibilityState==='visible'&&!document.activeElement?.matches('input,select,textarea')&&!isProductModalOpen())downloadCloud(true);
  },2500);
  connectCloud(true);
 }
