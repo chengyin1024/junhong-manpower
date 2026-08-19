@@ -158,11 +158,10 @@
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
           <strong id="manualSaveStatus">🟢 已同步</strong>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button id="manualUpload" class="primary" type="button" style="margin:0">同步到雲端</button>
             <button id="manualDownload" class="secondary" type="button" style="margin:0">讀取最新資料</button>
           </div>
         </div>
-        <div class="hint" style="margin-top:6px">修改會先保存在這台裝置，再自動同步到雲端；另一台通常會立即更新，最慢約 3 秒內跟上。按鈕可用來立即同步。</div>
+        <div class="hint" style="margin-top:6px">修改會先保存在這台裝置，再自動同步到雲端；另一台通常會立即更新，最慢約 3 秒內跟上。如要手動重新讀取雲端資料，可按「讀取最新資料」。</div>
       </div>
       <div id="employeeList" class="employee-sections" style="margin-top:10px"></div>
       <button id="clearAbsence" class="secondary" style="margin-top:10px"><span data-i18n="clearTempLeave">清除所選日期臨時請假</span></button>
@@ -1138,13 +1137,6 @@ function initCloudUI(){
  $('reconnectCloud').onclick=()=>resetCloudConnection();
  $('uploadCloud').onclick=()=>uploadCloud(false);
  $('downloadCloud').onclick=async()=>{const ok=await downloadCloud(false);if(ok)markManualSynced()};
- $('manualUpload').onclick=async()=>{
-  if(!cloudReady){alert('目前尚未連上雲端，請稍後再試。');return;}
-  const btn=$('manualUpload');btn.disabled=true;btn.textContent='同步中…';
-  const ok=await uploadCloud(false);
-  btn.disabled=false;btn.textContent='同步到雲端';
-  if(ok!==false)markManualSynced();
- };
  $('manualDownload').onclick=async()=>{
   if(manualDirty&&!confirm('這台裝置還有尚未同步的修改。讀取雲端資料會覆蓋本機內容，確定繼續嗎？'))return;
   const btn=$('manualDownload');btn.disabled=true;btn.textContent='讀取中…';
