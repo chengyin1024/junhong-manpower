@@ -228,7 +228,7 @@
     <div class="card">
       <h2 data-i18n="productSettings">產品需求設定</h2>
       <div class="hint" data-i18n="productHint">基本需求以「洗1個、無巨堡、無鎖螺絲」為基準。</div>
-      <div class="product-tools"><input id="productSettingsSearch" type="search" data-i18n-placeholder="productSearchPlaceholder" placeholder="搜尋產品名稱"><button id="addProduct" class="secondary" data-i18n="addProduct">新增產品</button></div>
+      <div class="product-tools"><div class="product-search-wrap"><input id="productSettingsSearch" type="search" autocomplete="off" data-i18n-placeholder="productSearchPlaceholder" placeholder="搜尋產品名稱" aria-autocomplete="list" aria-expanded="false"><div id="productSettingsSuggestions" class="product-suggestions" role="listbox"></div></div><button id="addProduct" class="secondary" data-i18n="addProduct">新增產品</button></div>
       <div id="productCount" class="product-count"></div>
       <div class="product-list"><div class="product-list-head"><span data-i18n="partNumber">產品名稱</span><span data-i18n="basePeople">基本人數</span><span data-i18n="screwAdd">拆螺絲＋</span><span data-i18n="action">操作</span></div><div id="productSettings"></div></div>
     </div>
@@ -634,6 +634,14 @@ function renderProductSuggestions(show=false){
  const keyword=input.value.trim().toLocaleLowerCase();
  const matches=(data.products||[]).filter(product=>String(product.name).toLocaleLowerCase().includes(keyword)).slice(0,8);
  box.innerHTML=matches.length?matches.map(product=>`<button type="button" class="product-suggestion" role="option" data-product-suggestion="${esc(product.name)}">${esc(product.name)}</button>`).join(''):`<div class="product-suggestion-empty">找不到符合的產品名稱</div>`;
+ box.classList.toggle('show',show);
+ input.setAttribute('aria-expanded',show?'true':'false');
+}
+function renderProductSettingsSuggestions(show=false){
+ const input=$('productSettingsSearch'),box=$('productSettingsSuggestions');if(!input||!box)return;
+ const keyword=input.value.trim().toLocaleLowerCase();
+ const matches=(data.products||[]).filter(product=>String(product.name).toLocaleLowerCase().includes(keyword)).slice(0,8);
+ box.innerHTML=matches.length?matches.map(product=>`<button type="button" class="product-suggestion" role="option" data-settings-product-suggestion="${esc(product.name)}">${esc(product.name)}</button>`).join(''):`<div class="product-suggestion-empty">找不到符合的產品名稱</div>`;
  box.classList.toggle('show',show);
  input.setAttribute('aria-expanded',show?'true':'false');
 }
@@ -1205,7 +1213,11 @@ $('leaveSettings').onchange=()=>{
 };
 
 $('addProduct').onclick=()=>openProductModal();
-$('productSettingsSearch').oninput=renderSettings;
+$('productSettingsSearch').oninput=()=>{renderSettings();renderProductSettingsSuggestions(true)};
+$('productSettingsSearch').onfocus=()=>renderProductSettingsSuggestions(true);
+$('productSettingsSearch').onblur=()=>setTimeout(()=>renderProductSettingsSuggestions(false),120);
+$('productSettingsSuggestions').onmousedown=e=>e.preventDefault();
+$('productSettingsSuggestions').onclick=e=>{const item=e.target.closest('[data-settings-product-suggestion]');if(!item)return;$('productSettingsSearch').value=item.dataset.settingsProductSuggestion;renderSettings();renderProductSettingsSuggestions(false)};
 $('productSettings').onclick=e=>{const button=e.target.closest('[data-product-edit]');if(button)openProductModal(button.dataset.productEdit)};
 $('cancelProductModal').onclick=closeProductModal;
 $('productModal').onclick=e=>{if(e.target===$('productModal'))closeProductModal()};
