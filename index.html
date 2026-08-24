@@ -259,6 +259,16 @@
     <div class="product-modal-actions"><button id="deleteModalProduct" class="danger" type="button" data-i18n="delete">刪除</button><div class="product-modal-right"><button id="cancelProductModal" class="secondary" type="button" data-i18n="cancel">取消</button><button class="primary" type="submit" style="margin-top:0" data-i18n="saveProduct">儲存產品</button></div></div>
   </form>
 </div>
+<div id="employeeModal" class="product-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="employeeModalTitle">
+  <form id="employeeForm" class="product-modal">
+    <h2 id="employeeModalTitle">新增員工</h2>
+    <div class="hint">填寫姓名後，選擇所屬人力類別。</div>
+    <label for="employeeModalName">姓名</label><input id="employeeModalName" required autocomplete="off" placeholder="請輸入姓名">
+    <label for="employeeModalCategory">人力類別</label>
+    <select id="employeeModalCategory"><option value="1F">1F</option><option value="2F">2F</option><option value="烤漆">烤漆</option><option value="洗料">洗料</option></select>
+    <div class="product-modal-actions"><div class="product-modal-right"><button id="cancelEmployeeModal" class="secondary" type="button">取消</button><button class="primary" type="submit" style="margin-top:0">儲存員工</button></div></div>
+  </form>
+</div>
 <div id="toast" class="toast">儲存成功</div>
 <script>
 const defaults={
@@ -733,6 +743,8 @@ function syncEmployeeInputs(){
 }
 let editingProductId=null,selectProductAfterSave=false;
 function isProductModalOpen(){return $('productModal')?.classList.contains('show')}
+function isEmployeeModalOpen(){return $('employeeModal')?.classList.contains('show')}
+function isEditorModalOpen(){return isProductModalOpen()||isEmployeeModalOpen()}
 function sortProducts(){data.products.sort((a,b)=>String(a.name).localeCompare(String(b.name),'zh-Hant',{numeric:true,sensitivity:'base'}))}
 function openProductModal(id=null,selectAfterSave=false){
  editingProductId=id;
@@ -746,6 +758,22 @@ function openProductModal(id=null,selectAfterSave=false){
 function closeProductModal(){
  $('productModal').classList.remove('show');editingProductId=null;selectProductAfterSave=false;
  if(cloudReady&&!manualDirty)scheduleRemoteDownload();
+}
+function openEmployeeModal(){
+ $('employeeModalName').value='';$('employeeModalCategory').value='1F';
+ $('employeeModal').classList.add('show');setTimeout(()=>$('employeeModalName').focus(),0);
+}
+function closeEmployeeModal(){
+ $('employeeModal').classList.remove('show');
+ if(cloudReady&&!manualDirty)scheduleRemoteDownload();
+}
+function saveEmployeeModal(){
+ const name=$('employeeModalName').value.trim();
+ const category=$('employeeModalCategory').value;
+ if(!name)return;
+ if(data.employees.some(employee=>employee.trim().toLocaleLowerCase()===name.toLocaleLowerCase())){alert('這位員工已經在名單中');return;}
+ data.employees.push(name);data.employeeCategories??={};data.employeeCategories[name]=['1F','2F','烤漆','洗料'].includes(category)?category:'1F';
+ persist();closeEmployeeModal();renderSettings();renderCalc();showToast('員工已新增，正在自動同步');
 }
 async function saveProductModal(){
  const name=$('productModalName').value.trim();if(!name)return;
@@ -1014,7 +1042,7 @@ async function uploadCloud(silent=false){
  }catch(err){applyingRemote=false;setCloudStatus('同步失敗：'+err.message,'error');if(!silent)alert('上傳失敗：'+err.message);return false}
 }
 async function downloadCloud(silent=false){
- if(!cloudReady||isProductModalOpen())return false;
+ if(!cloudReady||isEditorModalOpen())return false;
  try{
   const [settingsR,productsR,employeesR,leavesR,tempR,recordsR]=await Promise.all([
    cloudClient.from('manpower_settings').select('*').eq('id','main').maybeSingle(),
@@ -1025,7 +1053,7 @@ async function downloadCloud(silent=false){
    cloudClient.from('manpower_daily_records').select('*').order('created_at',{ascending:false}).limit(365)
   ]);
   for(const r of [settingsR,productsR,employeesR,leavesR,tempR,recordsR])if(r.error)throw r.error;
-  if(isProductModalOpen())return false;
+  if(isEditorModalOpen())return false;
   const hasCloudData=(productsR.data?.length||employeesR.data?.length||leavesR.data?.length||tempR.data?.length||recordsR.data?.length);
   if(!hasCloudData){if(!silent)showToast('雲端尚無資料');return false;}
   applyingRemote=true;
@@ -1085,7 +1113,7 @@ function scheduleCloudUpload(){
  },500);
 }
 function scheduleRemoteDownload(){
- if(!cloudReady||applyingRemote||isProductModalOpen())return;
+ if(!cloudReady||applyingRemote||isEditorModalOpen())return;
  clearTimeout(remoteTimer);remoteTimer=setTimeout(()=>downloadCloud(true),700);
 }
 async function connectCloud(auto=false){
@@ -1169,7 +1197,7 @@ function initCloudUI(){
   if(!navigator.onLine)return;
   if(!cloudReady){connectCloud(true);return;}
   if(manualDirty){scheduleCloudUpload();return;}
-  if(document.visibilityState==='visible'&&!document.activeElement?.matches('input,select,textarea')&&!isProductModalOpen())downloadCloud(true);
+  if(document.visibilityState==='visible'&&!document.activeElement?.matches('input,select,textarea')&&!isEditorModalOpen())downloadCloud(true);
  },2500);
  connectCloud(true);
 }
@@ -1228,8 +1256,11 @@ $('cancelProductModal').onclick=closeProductModal;
 $('productModal').onclick=e=>{if(e.target===$('productModal'))closeProductModal()};
 $('productForm').onsubmit=e=>{e.preventDefault();saveProductModal()};
 $('deleteModalProduct').onclick=deleteModalProduct;
+$('employeeModal').onclick=e=>{if(e.target===$('employeeModal'))closeEmployeeModal()};
+$('employeeForm').onsubmit=e=>{e.preventDefault();saveEmployeeModal()};
+$('cancelEmployeeModal').onclick=closeEmployeeModal;
 $('saveRules').onclick=()=>{data.rules.wash2Add=Math.max(0,+$('wash2Add').value||0);data.rules.jubaoAdd=Math.max(0,+$('jubaoAdd').value||0);persist();renderSettings();renderCalc();showToast(tr('saved'))};
-$('addEmployee').onclick=()=>{syncEmployeeInputs();let base=tr('newEmployee'),name=base,n=2;while(data.employees.includes(name))name=`${base}${n++}`;data.employees.push(name);data.employeeCategories??={};data.employeeCategories[name]='1F';persist();renderSettings();renderCalc();showToast(tr('added'))};
+$('addEmployee').onclick=openEmployeeModal;
 $('saveEmployees').onclick=()=>saveEmployeeDirectory();
 $('queryDate').value=todayISO();
 applyLanguage();
