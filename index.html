@@ -23,6 +23,7 @@
     .settings-row{display:grid;grid-template-columns:1fr 90px 78px 36px;gap:7px;align-items:center;margin:8px 0}.settings-row.employee{grid-template-columns:minmax(0,1fr) 90px 36px}.settings-row input,.settings-row select{padding:9px;font-size:14px}
     .product-tools{display:grid;grid-template-columns:1fr auto;gap:9px;margin:14px 0 8px}.product-tools .secondary{white-space:nowrap}.product-count{font-size:13px;color:var(--muted);margin:7px 0}.product-list{border:1px solid var(--line);border-radius:14px;overflow:auto;max-height:430px}.product-list-head,.product-row{display:grid;grid-template-columns:minmax(0,1fr) 82px 82px 62px;gap:7px;align-items:center}.product-list-head{position:sticky;top:0;z-index:1;background:#f8fafc;color:var(--muted);font-size:12px;font-weight:800;padding:10px;border-bottom:1px solid var(--line)}.product-row{padding:10px;border-bottom:1px solid var(--line)}.product-row:last-child{border-bottom:0}.product-code{font-weight:800;overflow-wrap:anywhere}.product-row .secondary{padding:8px 6px;font-size:13px}.product-empty{padding:28px;text-align:center;color:var(--muted)}.product-modal-overlay{display:none;position:fixed;inset:0;z-index:10000;background:rgba(17,24,39,.48);padding:18px;align-items:center;justify-content:center}.product-modal-overlay.show{display:flex}.product-modal{width:min(100%,440px);background:#fff;border-radius:18px;padding:18px;box-shadow:0 16px 44px rgba(0,0,0,.23)}.product-modal h2{margin-bottom:3px}.product-modal label{font-size:14px;margin:16px 0 7px}.product-modal-actions{display:flex;justify-content:space-between;gap:8px;margin-top:18px}.product-modal-right{display:flex;gap:8px;margin-left:auto}.product-modal-right .primary{width:auto;padding:9px 12px}
     .settings-category-title{font-weight:900;font-size:14px;margin:16px 0 7px;padding:8px 10px;border-radius:10px;background:#f3f4f6}
+    .leave-entry{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto 36px;gap:9px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;margin:8px 0;font-size:14px}.leave-entry-name{font-weight:800;overflow-wrap:anywhere}.leave-entry-type{padding:4px 8px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-weight:800;white-space:nowrap}.leave-entry .danger{width:36px;padding:7px 0}
     .settings-row.employee.paint{background:#fff7ed;border-radius:12px;padding:7px}.settings-row.employee.wash{background:#f5f3ff;border-radius:12px;padding:7px}
     .emp.paint{background:#fff7ed;border-color:#fed7aa}.emp.wash{background:#f5f3ff;border-color:#ddd6fe}
     .leave-priority .emp,.leave-priority .emp.half-am,.leave-priority .emp.half-pm,.leave-priority .emp.paint,.leave-priority .emp.wash{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
@@ -269,6 +270,16 @@
     <div class="product-modal-actions"><div class="product-modal-right"><button id="cancelEmployeeModal" class="secondary" type="button">取消</button><button class="primary" type="submit" style="margin-top:0">儲存員工</button></div></div>
   </form>
 </div>
+<div id="leaveModal" class="product-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="leaveModalTitle">
+  <form id="leaveForm" class="product-modal">
+    <h2 id="leaveModalTitle">新增區間請假</h2>
+    <div class="hint">選擇人員、日期與請假時段後再儲存。</div>
+    <label for="leaveModalName">請假人員</label><select id="leaveModalName"></select>
+    <div class="row"><div><label for="leaveModalStart">開始日期</label><input id="leaveModalStart" type="date" required></div><div><label for="leaveModalEnd">結束日期</label><input id="leaveModalEnd" type="date" required></div></div>
+    <label for="leaveModalType">請假時段</label><select id="leaveModalType"><option value="full">全天請假</option><option value="am">上午請假</option><option value="pm">下午請假</option></select>
+    <div class="product-modal-actions"><div class="product-modal-right"><button id="cancelLeaveModal" class="secondary" type="button">取消</button><button class="primary" type="submit" style="margin-top:0">儲存請假</button></div></div>
+  </form>
+</div>
 <div id="toast" class="toast">儲存成功</div>
 <script>
 const defaults={
@@ -479,13 +490,25 @@ async function refreshTempAbsencesFromCloud(){
 }
 function loadLeaves(){
  const leaves=JSON.parse(localStorage.getItem('manpowerV1Leaves')||'[]');
- const active=leaves.filter(x=>x?.end>=todayISO());
+ const normalized=leaves.map(x=>({...x,type:['am','pm','full'].includes(x?.type)?x.type:'full'}));
+ const active=normalized.filter(x=>x?.end>=todayISO());
  if(active.length!==leaves.length)localStorage.setItem('manpowerV1Leaves',JSON.stringify(active));
  return active;
 }
 function saveLeaves(v){localStorage.setItem('manpowerV1Leaves',JSON.stringify(v));scheduleCloudUpload()}
+function mergeLeaveType(first,second){
+ if(first==='full'||second==='full')return 'full';
+ if(!first)return second||'';
+ if(!second||first===second)return first;
+ return 'full';
+}
+function activeLeaveStatus(date=selectedDate()){
+ const statuses=new Map();
+ loadLeaves().filter(x=>x.start<=date&&date<=x.end).forEach(x=>statuses.set(x.name,mergeLeaveType(statuses.get(x.name),x.type)));
+ return statuses;
+}
 function activeLeaveNames(date=selectedDate()){
- return [...new Set(loadLeaves().filter(x=>x.start<=date&&date<=x.end).map(x=>x.name))];
+ return [...activeLeaveStatus(date).keys()];
 }
 const $=id=>document.getElementById(id);
 const translations={
@@ -579,6 +602,15 @@ function categoryOptions(selected='1F'){
  <option value="洗料" ${selected==='洗料'?'selected':''}>洗料</option>`;
 }
 function encodeCloudEmployeeName(name,category){return `${name}|||CAT:${category}`;}
+const CLOUD_LEAVE_TYPE_PREFIX='__manpower_leave__';
+function encodeCloudLeaveName(name,type='full'){
+ const normalized=['am','pm','full'].includes(type)?type:'full';
+ return normalized==='full'?name:`${CLOUD_LEAVE_TYPE_PREFIX}${normalized}__${name}`;
+}
+function decodeCloudLeaveName(value){
+ const match=String(value||'').match(/^__manpower_leave__(am|pm)__([\s\S]+)$/);
+ return match?{name:match[2],type:match[1]}:{name:String(value||''),type:'full'};
+}
 function decodeCloudEmployeeName(value){
  const s=String(value||'');
  const marker='|||CAT:';const pos=s.lastIndexOf(marker);
@@ -594,11 +626,12 @@ function tempLeaveOptions(selected=''){
 }
 function renderEmployeeListOnly(){
  const list=$('employeeList');if(!list)return;
- const temp=loadTempAbsence(), range=activeLeaveNames();
+ const temp=loadTempAbsence(), range=activeLeaveStatus();
  const employees=sortedEmployees().map(employee=>{
    const n=employee.name;
-   const locked=range.includes(n);
-   const type=locked?'full':(temp[n]||'');
+   const rangeType=range.get(n)||'';
+   const locked=!!rangeType;
+   const type=mergeLeaveType(rangeType,temp[n]||'');
    return {...employee,locked,type};
  });
  const categoryClass=category=>category==='1F'?'category-1f':category==='2F'?'category-2f':category==='烤漆'?'category-paint':'category-wash';
@@ -619,22 +652,22 @@ function renderEmployeeListOnly(){
 }
 function renderOvertimeList(){
  const list=$('overtimeEmployeeList');if(!list)return;
- const temp=loadTempAbsence(),range=new Set(activeLeaveNames());
+ const temp=loadTempAbsence(),range=activeLeaveStatus();
  const categoryClass=category=>category==='1F'?'category-1f':category==='2F'?'category-2f':category==='烤漆'?'category-paint':'category-wash';
  const groups=['1F','2F','烤漆','洗料'].map(category=>{
    const people=sortedEmployees().filter(x=>x.category===category);if(!people.length)return '';
    const title=category==='烤漆'?'烤漆／噴漆':category;
-   return `<section class="employee-section ${categoryClass(category)}"><h3 class="employee-section-title">${title}</h3><div class="employee-grid">${people.map(({name})=>{const unavailable=range.has(name)||temp[name]==='pm'||temp[name]==='full';return `<label class="emp ${unavailable?'absent':''}"><span class="emp-name">${esc(name)}${unavailable?'（請假）':''}</span><input type="checkbox" data-overtime-name="${esc(name)}" ${unavailable?'disabled':''}></label>`}).join('')}</div></section>`;
+   return `<section class="employee-section ${categoryClass(category)}"><h3 class="employee-section-title">${title}</h3><div class="employee-grid">${people.map(({name})=>{const rangeType=range.get(name)||'';const unavailable=rangeType==='pm'||rangeType==='full'||temp[name]==='pm'||temp[name]==='full';return `<label class="emp ${unavailable?'absent':''}"><span class="emp-name">${esc(name)}${unavailable?'（請假）':''}</span><input type="checkbox" data-overtime-name="${esc(name)}" ${unavailable?'disabled':''}></label>`}).join('')}</div></section>`;
  }).join('');
  list.innerHTML=groups||`<div class="empty">尚未建立員工資料。</div>`;
  renderOvertimeSelectedSummary();
 }
 function renderOvertimeSelectedSummary(){
  const box=$('overtimeSelectedSummary');if(!box)return;
- const temp=loadTempAbsence(),range=new Set(activeLeaveNames());
+ const temp=loadTempAbsence(),range=activeLeaveStatus();
  const selected=new Set([...document.querySelectorAll('[data-overtime-name]:checked')].map(input=>input.dataset.overtimeName));
  const all=calcMode==='all';
- const active=sortedEmployees().filter(({name})=>!range.has(name)&&temp[name]!=='pm'&&temp[name]!=='full'&&(all?!selected.has(name):selected.has(name)));
+ const active=sortedEmployees().filter(({name})=>{const rangeType=range.get(name)||'';return rangeType!=='pm'&&rangeType!=='full'&&temp[name]!=='pm'&&temp[name]!=='full'&&(all?!selected.has(name):selected.has(name))});
  const product=$('product')?.value.trim()||'未選擇產品';
  const rows=['1F','2F','烤漆','洗料'].map(group=>{const names=active.filter(item=>item.category===group).map(item=>item.name);const title=group==='烤漆'?'烤漆／噴漆':group;return `<div class="selected-summary-row"><strong>${title} ${names.length} 人</strong>${names.length?names.map(esc).join('、'):'—'}</div>`}).join('');
  box.innerHTML=`<h3>本次加班人員（可截圖傳 LINE）｜共 ${active.length} 人</h3><div class="selected-summary-meta">${selectedDate()}｜${esc(product)}</div>${rows}`;
@@ -673,19 +706,8 @@ function renderCalc(){
 }
 function renderLeaves(){
  const leaves=loadLeaves();
- $('leaveSettings').innerHTML=leaves.length?leaves.map((x,i)=>`<div class="leave-row">
-   <select data-lname="${i}">${sortedEmployees().map(({name:n})=>`<option ${n===x.name?'selected':''}>${esc(n)}</option>`).join('')}</select>
-   <input data-lstart="${i}" type="date" value="${x.start}">
-   <input data-lend="${i}" type="date" value="${x.end}">
-   <button type="button" class="danger" onclick="deleteLeave(${i})" aria-label="刪除">×</button>
- </div>`).join('') :`<div class="empty">${tr('emptyLeave')}</div>`;
-}
-function saveLeaveInputs(){
- const names=[...document.querySelectorAll('[data-lname]')];
- const starts=[...document.querySelectorAll('[data-lstart]')];
- const ends=[...document.querySelectorAll('[data-lend]')];
- const arr=names.map((n,i)=>({name:n.value,start:starts[i].value,end:ends[i].value})).filter(x=>x.name&&x.start&&x.end&&x.start<=x.end);
- saveLeaves(arr);
+ const typeLabel={full:'全天請假',am:'上午請假',pm:'下午請假'};
+ $('leaveSettings').innerHTML=leaves.length?leaves.map((x,i)=>`<div class="leave-entry"><strong class="leave-entry-name">${esc(x.name)}</strong><span class="leave-entry-date">${esc(x.start)}</span><span class="leave-entry-date">至 ${esc(x.end)}</span><span class="leave-entry-type">${typeLabel[x.type]||typeLabel.full}</span><button type="button" class="danger" onclick="deleteLeave(${i})" aria-label="刪除">×</button></div>`).join('') :`<div class="empty">${tr('emptyLeave')}</div>`;
 }
 function renderSettings(){
  const query=$('productSettingsSearch').value.trim().toLowerCase();
@@ -744,7 +766,8 @@ function syncEmployeeInputs(){
 let editingProductId=null,selectProductAfterSave=false;
 function isProductModalOpen(){return $('productModal')?.classList.contains('show')}
 function isEmployeeModalOpen(){return $('employeeModal')?.classList.contains('show')}
-function isEditorModalOpen(){return isProductModalOpen()||isEmployeeModalOpen()}
+function isLeaveModalOpen(){return $('leaveModal')?.classList.contains('show')}
+function isEditorModalOpen(){return isProductModalOpen()||isEmployeeModalOpen()||isLeaveModalOpen()}
 function sortProducts(){data.products.sort((a,b)=>String(a.name).localeCompare(String(b.name),'zh-Hant',{numeric:true,sensitivity:'base'}))}
 function openProductModal(id=null,selectAfterSave=false){
  editingProductId=id;
@@ -774,6 +797,24 @@ function saveEmployeeModal(){
  if(data.employees.some(employee=>employee.trim().toLocaleLowerCase()===name.toLocaleLowerCase())){alert('這位員工已經在名單中');return;}
  data.employees.push(name);data.employeeCategories??={};data.employeeCategories[name]=['1F','2F','烤漆','洗料'].includes(category)?category:'1F';
  persist();closeEmployeeModal();renderSettings();renderCalc();showToast('員工已新增，正在自動同步');
+}
+function openLeaveModal(){
+ const employees=sortedEmployees();
+ if(!employees.length){alert('請先新增員工');return;}
+ $('leaveModalName').innerHTML=employees.map(({name})=>`<option value="${esc(name)}">${esc(name)}</option>`).join('');
+ $('leaveModalStart').value=selectedDate();$('leaveModalEnd').value=selectedDate();$('leaveModalType').value='full';
+ $('leaveModal').classList.add('show');setTimeout(()=>$('leaveModalName').focus(),0);
+}
+function closeLeaveModal(){
+ $('leaveModal').classList.remove('show');
+ if(cloudReady&&!manualDirty)scheduleRemoteDownload();
+}
+function saveLeaveModal(){
+ const name=$('leaveModalName').value,start=$('leaveModalStart').value,end=$('leaveModalEnd').value,type=$('leaveModalType').value;
+ if(!name||!start||!end||start>end){alert('請確認請假人員與日期');return;}
+ const leaves=loadLeaves();
+ if(leaves.some(x=>x.name===name&&x.start===start&&x.end===end&&x.type===type)){alert('這筆請假已經存在');return;}
+ leaves.push({name,start,end,type});saveLeaves(leaves);closeLeaveModal();renderCalc();showToast('請假已儲存，正在自動同步');
 }
 async function saveProductModal(){
  const name=$('productModalName').value.trim();if(!name)return;
@@ -826,11 +867,11 @@ function calc(){
  const p=data.products.find(x=>x.name===$('product').value.trim()); if(!p){alert('請從搜尋結果選擇正確產品名稱');return}
  const wash=Number(document.querySelector('input[name=wash]:checked').value);
  const temp=loadTempAbsence();
- const range=new Set(activeLeaveNames());
+ const range=activeLeaveStatus();
  const productionEmployees=data.employees.filter(name=>employeeCategory(name)!=='烤漆');
  const paintEmployees=data.employees.filter(name=>employeeCategory(name)==='烤漆');
- const isAbsentMorning=name=>range.has(name)||temp[name]==='am'||temp[name]==='full';
- const isAbsentAfternoon=name=>range.has(name)||temp[name]==='pm'||temp[name]==='full';
+ const isAbsentMorning=name=>{const type=range.get(name)||'';return type==='full'||type==='am'||temp[name]==='am'||temp[name]==='full'};
+ const isAbsentAfternoon=name=>{const type=range.get(name)||'';return type==='full'||type==='pm'||temp[name]==='pm'||temp[name]==='full'};
 
  const productionAbsentMorning=productionEmployees.filter(isAbsentMorning).length;
  const productionAbsentAfternoon=productionEmployees.filter(isAbsentAfternoon).length;
@@ -922,10 +963,10 @@ function updateAssemblyNeedPreview(){
 }
 function calcOvertime(){
  const p=data.products.find(x=>x.name===$('product').value.trim());if(!p){alert('請從搜尋結果選擇正確產品名稱');return}
- const all=calcMode==='all',temp=loadTempAbsence(),range=new Set(activeLeaveNames());
+ const all=calcMode==='all',temp=loadTempAbsence(),range=activeLeaveStatus();
  const staff=data.employees.filter(name=>['1F','2F','烤漆','洗料'].includes(employeeCategory(name)));
  const selected=new Set([...document.querySelectorAll('[data-overtime-name]:checked')].map(input=>input.dataset.overtimeName));
- const automatic=new Set(staff.filter(name=>range.has(name)||temp[name]==='pm'||temp[name]==='full'));
+ const automatic=new Set(staff.filter(name=>{const type=range.get(name)||'';return type==='pm'||type==='full'||temp[name]==='pm'||temp[name]==='full'}));
  const availableFor=group=>staff.filter(name=>employeeCategory(name)===group&&!automatic.has(name)&&(all?!selected.has(name):selected.has(name))).length;
  const one=availableFor('1F'),two=availableFor('2F'),paint=availableFor('烤漆'),assembly=one+two,total=assembly+paint;
  const need=Number(p.base)||0,countedPeople=all?assembly:total,missing=Math.max(0,need-countedPeople);
@@ -942,10 +983,10 @@ function calcNightOvertime(){
  const p=data.products.find(x=>x.name===$('product').value.trim());if(!p){alert('請從搜尋結果選擇正確產品名稱');return}
  const wash=Number(document.querySelector('input[name=wash]:checked').value);
  const temp=loadTempAbsence();
- const range=new Set(activeLeaveNames());
+ const range=activeLeaveStatus();
  const productionEmployees=data.employees.filter(name=>employeeCategory(name)!=='烤漆');
  const manualNoOvertime=new Set(loadNightNoOvertime().filter(name=>productionEmployees.includes(name)));
- const automaticNoOvertime=new Set(productionEmployees.filter(name=>range.has(name)||temp[name]==='pm'||temp[name]==='full'));
+ const automaticNoOvertime=new Set(productionEmployees.filter(name=>{const type=range.get(name)||'';return type==='pm'||type==='full'||temp[name]==='pm'||temp[name]==='full'}));
  const unavailable=new Set([...manualNoOvertime,...automaticNoOvertime]);
  const available=Math.max(0,productionEmployees.length-unavailable.size);
  const need=p.base+(wash===2?data.rules.wash2Add:0)+($('jubao').checked?data.rules.jubaoAdd:0)+($('screw').checked?p.screwAdd:0);
@@ -1015,7 +1056,7 @@ async function uploadCloud(silent=false){
   const settings=[{id:'main',wash2_add:Number(data.rules.wash2Add)||0,jubao_add:Number(data.rules.jubaoAdd)||0,language:lang,updated_at:now}];
   const products=(data.products||[]).map((p,i)=>({id:String(p.id),name:p.name,base_people:Number(p.base)||0,screw_add:Number(p.screwAdd)||0,sort_order:i,updated_at:now}));
   const employees=(data.employees||[]).map((name,i)=>({name:encodeCloudEmployeeName(name,employeeCategory(name)),sort_order:i,updated_at:now}));
-  const leaves=loadLeaves().map(x=>({employee_name:x.name,start_date:x.start,end_date:x.end,updated_at:now}));
+  const leaves=loadLeaves().map(x=>({employee_name:encodeCloudLeaveName(x.name,x.type),start_date:x.start,end_date:x.end,updated_at:now}));
   const tempRows=[];
   const tempByDate=JSON.parse(localStorage.getItem('manpowerV1TempAbsenceByDate')||'{}');
   Object.entries(tempByDate).forEach(([date,statuses])=>{
@@ -1063,7 +1104,10 @@ async function downloadCloud(silent=false){
    if(employeesR.data?.length){const decoded=employeesR.data.map(e=>decodeCloudEmployeeName(e.name));data.employees=decoded.map(e=>e.name);data.employeeCategories={};decoded.forEach(e=>data.employeeCategories[e.name]=e.category);}
    localStorage.setItem('manpowerV1Data',JSON.stringify(data));
    const activeCloudLeaves=(leavesR.data||[]).filter(x=>x.end_date>=todayISO());
-   localStorage.setItem('manpowerV1Leaves',JSON.stringify(activeCloudLeaves.map(x=>({name:x.employee_name,start:x.start_date,end:x.end_date}))));
+   localStorage.setItem('manpowerV1Leaves',JSON.stringify(activeCloudLeaves.map(x=>{
+    const leave=decodeCloudLeaveName(x.employee_name);
+    return {name:leave.name,start:x.start_date,end:x.end_date,type:leave.type};
+   })));
    const byDate={},nightByDate={};(tempR.data||[]).forEach(x=>{
     const nightName=decodeNightNoOvertimeName(x.employee_name);
     if(nightName){(nightByDate[x.absence_date]??=[]).push(nightName);return;}
@@ -1239,11 +1283,10 @@ $('clearAbsence').onclick=()=>{
  markManualDirty();
  showToast(tr('cleared'));
 };
-$('addLeave').onclick=()=>{const arr=loadLeaves();arr.push({name:data.employees[0]||'',start:selectedDate(),end:selectedDate()});saveLeaves(arr);renderCalc();showToast(tr('added'))};
-$('leaveSettings').onchange=()=>{
-  saveLeaveInputs();
-  showToast(tr('saved'));
-};
+$('addLeave').onclick=openLeaveModal;
+$('leaveModal').onclick=e=>{if(e.target===$('leaveModal'))closeLeaveModal()};
+$('leaveForm').onsubmit=e=>{e.preventDefault();saveLeaveModal()};
+$('cancelLeaveModal').onclick=closeLeaveModal;
 
 $('addProduct').onclick=()=>openProductModal();
 $('productSettingsSearch').oninput=()=>{renderSettings();renderProductSettingsSuggestions(true)};
